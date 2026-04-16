@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oloyin-Fresh Eggs — Worker Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:    #2d6a4f;
+      --green-dk: #1b4332;
+      --green-lt: #52b788;
+      --green-bg: #d8f3dc;
+      --orange:   #f77f00;
+      --red:      #c0392b;
+      --red-lt:   #f8d7da;
+      --text:     #1a1a2e;
+      --muted:    #6c757d;
+      --bg:       #f4f6f3;
+      --card:     #ffffff;
+      --border:   #dee2e6;
+      --radius:   12px;
+      --shadow:   0 2px 12px rgba(0,0,0,.08);
+      --shadow-lg:0 6px 28px rgba(0,0,0,.13);
+    }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* ── LOGIN ─────────────────────────────────── */
+    #login-screen {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(160deg,var(--green-dk) 0%,var(--green-lt) 100%); padding:1.25rem;
+    }
+    .login-card {
+      background:var(--card); border-radius:16px; padding:2.25rem 1.75rem;
+      width:100%; max-width:380px; box-shadow:var(--shadow-lg);
+    }
+    .login-brand { text-align:center; margin-bottom:2rem; }
+    .login-brand .brand-icon { font-size:3.2rem; display:block; margin-bottom:.6rem; filter:drop-shadow(0 2px 6px rgba(45,106,79,.35)); }
+    .login-brand .brand-name {
+      font-family:'Poppins',sans-serif; font-size:1.6rem; font-weight:900;
+      letter-spacing:.03em; text-transform:uppercase;
+      background:linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      display:block; line-height:1.1;
+    }
+    .login-brand .brand-name em { font-style:normal; -webkit-text-fill-color:var(--orange); color:var(--orange); }
+    .login-brand .brand-tag {
+      font-family:'Poppins',sans-serif; font-size:.68rem; font-weight:600;
+      letter-spacing:.22em; text-transform:uppercase; color:var(--muted);
+      margin-top:.4rem; display:block;
+    }
+    .login-brand p  { color:var(--muted); font-size:.85rem; margin-top:.4rem; }
+
+    /* ── APP SHELL ─────────────────────────────── */
+    #app { display:none; max-width:520px; margin:0 auto; min-height:100vh; padding-bottom:5rem; }
+
+    /* ── TOP BAR ───────────────────────────────── */
+    #topbar {
+      background:var(--green); color:#fff; padding:.85rem 1.25rem;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:50;
+    }
+    .tb-brand {
+      display:flex; align-items:center; gap:.4rem;
+    }
+    .tb-brand .tb-icon { font-size:1.3rem; }
+    .tb-brand .tb-text { display:flex; flex-direction:column; line-height:1.05; }
+    .tb-brand .tb-main {
+      font-family:'Poppins',sans-serif; font-size:.85rem; font-weight:900;
+      letter-spacing:.05em; text-transform:uppercase; color:#fff;
+    }
+    .tb-brand .tb-main em { font-style:normal; color:var(--orange-lt,#ffd166); }
+    .tb-brand .tb-sub {
+      font-size:.55rem; font-weight:600; letter-spacing:.15em;
+      text-transform:uppercase; color:rgba(255,255,255,.6);
+    }
+    .tb-right  { display:flex; align-items:center; gap:.6rem; font-size:.82rem; }
+    .tb-name   { opacity:.85; }
+    .tb-logout { background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:6px; padding:.3rem .65rem; cursor:pointer; font-size:.8rem; }
+
+    /* ── BOTTOM NAV ────────────────────────────── */
+    #bottom-nav {
+      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; max-width:520px; background:var(--card);
+      border-top:1px solid var(--border); display:flex; z-index:50;
+    }
+    .bnav-item {
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:.55rem .25rem; cursor:pointer; font-size:.68rem; color:var(--muted);
+      border:none; background:none; transition:color .15s;
+    }
+    .bnav-item .bico { font-size:1.35rem; margin-bottom:.15rem; }
+    .bnav-item.active { color:var(--green); font-weight:700; }
+
+    /* ── SECTIONS ──────────────────────────────── */
+    .section { display:none; padding:1.1rem; }
+    .section.active { display:block; }
+    .sec-title { font-size:1.1rem; font-weight:700; color:var(--green); margin-bottom:1rem; }
+
+    /* ── STAT CARDS ────────────────────────────── */
+    .stats-row { display:grid; grid-template-columns:1fr 1fr; gap:.85rem; margin-bottom:1.25rem; }
+    .stat-card {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:1rem; display:flex; flex-direction:column; gap:.3rem;
+    }
+    .stat-card .sc-icon  { font-size:1.5rem; }
+    .stat-card .sc-val   { font-size:1.7rem; font-weight:800; color:var(--green); }
+    .stat-card .sc-label { font-size:.78rem; color:var(--muted); }
+
+    /* ── QUICK ACTIONS ─────────────────────────── */
+    .qa-title { font-size:.82rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.75rem; }
+    .qa-grid  { display:grid; grid-template-columns:1fr 1fr; gap:.85rem; margin-bottom:1.5rem; }
+    .qa-btn {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      border:none; padding:1.1rem .75rem; cursor:pointer; text-align:center;
+      transition:transform .15s, box-shadow .15s;
+    }
+    .qa-btn:hover  { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+    .qa-btn:active { transform:scale(.97); }
+    .qa-btn .qi    { font-size:1.8rem; margin-bottom:.4rem; }
+    .qa-btn .ql    { font-size:.82rem; font-weight:600; color:var(--text); }
+    .qa-btn.green  { background:var(--green); }
+    .qa-btn.green .ql { color:#fff; }
+    .qa-btn.orange { background:var(--orange); }
+    .qa-btn.orange .ql { color:#fff; }
+
+    /* ── CARDS ─────────────────────────────────── */
+    .card {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:1rem 1.1rem; margin-bottom:.85rem;
+    }
+    .card-top { display:flex; justify-content:space-between; align-items:flex-start; }
+    .card h4  { font-size:.95rem; font-weight:700; }
+    .card p   { font-size:.83rem; color:var(--muted); margin-top:.2rem; }
+    .badge    { padding:.18rem .55rem; border-radius:20px; font-size:.72rem; font-weight:700; }
+    .badge-active   { background:var(--green-bg); color:var(--green); }
+    .badge-inactive { background:#e9ecef; color:#495057; }
+    .badge-layer    { background:#cfe2ff; color:#084298; }
+    .badge-broiler  { background:#fff3cd; color:#856404; }
+    .badge-other    { background:#e9ecef; color:#495057; }
+    .meta-row { display:flex; flex-wrap:wrap; gap:.5rem 1.25rem; margin-top:.5rem; font-size:.8rem; color:var(--muted); }
+    .meta-row strong { color:var(--text); }
+    .btn-arrow { background:none; border:none; color:var(--green); font-size:1.2rem; cursor:pointer; padding:.15rem; }
+
+    /* ── LOG ENTRIES ───────────────────────────── */
+    .log-item { border-top:1px solid var(--border); padding:.65rem 0; }
+    .log-item:first-child { border-top:none; padding-top:0; }
+    .log-item .li-top { display:flex; justify-content:space-between; align-items:center; }
+    .log-item .li-val { font-size:1rem; font-weight:700; color:var(--green); }
+    .log-item .li-date { font-size:.78rem; color:var(--muted); }
+    .log-item .li-sub  { font-size:.8rem; color:var(--muted); margin-top:.1rem; }
+
+    /* ── FILTER TABS ────────────────────────────── */
+    .tabs { display:flex; gap:.4rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .tab  { padding:.35rem .85rem; border-radius:20px; font-size:.83rem; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--muted); }
+    .tab.active { background:var(--green); color:#fff; border-color:var(--green); }
+
+    /* ── EMPTY ─────────────────────────────────── */
+    .empty { text-align:center; padding:2.5rem 1rem; color:var(--muted); }
+    .empty .ei { font-size:2.5rem; margin-bottom:.5rem; }
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite; margin:2rem auto; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── MODAL ─────────────────────────────────── */
+    #modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+      z-index:200; align-items:flex-end; justify-content:center;
+    }
+    #modal-overlay.open { display:flex; }
+    #modal-sheet {
+      background:var(--card); border-radius:18px 18px 0 0; padding:1.5rem 1.25rem 2rem;
+      width:100%; max-width:520px; max-height:92vh; overflow-y:auto;
+      animation:slideUp .25s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .sheet-handle { width:40px; height:4px; background:var(--border); border-radius:4px; margin:0 auto 1.25rem; }
+    .sheet-title  { font-size:1.05rem; font-weight:700; color:var(--green); margin-bottom:1.1rem; display:flex; justify-content:space-between; align-items:center; }
+    .sheet-title button { background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--muted); }
+    .form-group   { margin-bottom:.9rem; }
+    .form-group label { display:block; font-size:.8rem; font-weight:600; color:var(--muted); margin-bottom:.3rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:.6rem .85rem; border:1.5px solid var(--border); border-radius:8px;
+      font-size:.92rem; font-family:inherit; color:var(--text); background:#fff;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline:none; border-color:var(--green-lt);
+    }
+    .form-group textarea { resize:vertical; min-height:60px; }
+    .form-err { font-size:.82rem; color:var(--red); margin-bottom:.65rem; display:none; }
+    .btn-submit {
+      width:100%; background:var(--green); color:#fff; border:none; border-radius:10px;
+      padding:.75rem; font-size:.98rem; font-weight:700; cursor:pointer; margin-top:.5rem;
+    }
+    .btn-submit:disabled { background:#aaa; cursor:not-allowed; }
+    .form-2col { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+
+    /* ── TOAST ─────────────────────────────────── */
+    #toast {
+      position:fixed; bottom:5.5rem; left:50%; transform:translateX(-50%);
+      background:var(--text); color:#fff; padding:.7rem 1.25rem; border-radius:9px;
+      font-size:.88rem; max-width:300px; text-align:center; display:none; z-index:300;
+      box-shadow:var(--shadow-lg);
+    }
+    #toast.ok  { background:var(--green); }
+    #toast.err { background:var(--red); }
+
+    /* ── FLOCK DETAIL OVERLAY ───────────────────── */
+    #flock-detail {
+      display:none; position:fixed; inset:0; background:var(--bg); z-index:100; overflow-y:auto;
+    }
+    #flock-detail.open { display:block; }
+    .fd-header { background:var(--green); color:#fff; padding:1rem 1.25rem; display:flex; align-items:center; gap:.75rem; }
+    .fd-back   { background:none; border:none; color:#fff; font-size:1.4rem; cursor:pointer; }
+    .fd-title  { font-size:1rem; font-weight:700; }
+    .fd-body   { padding:1.1rem; }
+    .fd-stat   { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:1rem; margin-bottom:.85rem; }
+    .fd-stat h4 { font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:.65rem; }
+    .fd-row { display:flex; justify-content:space-between; margin-bottom:.4rem; font-size:.88rem; }
+    .fd-row .dl { color:var(--muted); }
+    .fd-row .dv { font-weight:600; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ LOGIN ═══════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="brand-icon">🥚</span>
+      <span class="brand-name">Oloyin<em>-Fresh</em></span>
+      <span class="brand-tag">Eggs &bull; Worker Portal</span>
+      <p>Sign in to log your farm activities</p>
+    </div>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="l-phone" placeholder="08012345678" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="l-pass" placeholder="••••••••" required />
+      </div>
+      <p id="l-err" class="form-err"></p>
+      <button type="submit" class="btn-submit" id="l-btn">Log In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════ APP ═══════ -->
+<div id="app">
+
+  <!-- Top Bar -->
+  <div id="topbar">
+    <div class="tb-brand">
+      <span class="tb-icon">🥚</span>
+      <span class="tb-text">
+        <span class="tb-main">Oloyin<em>-Fresh</em></span>
+        <span class="tb-sub">Worker Portal</span>
+      </span>
+    </div>
+    <div class="tb-right">
+      <span class="tb-name" id="tb-name"></span>
+      <button class="tb-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Sections -->
+
+  <!-- HOME -->
+  <div id="sec-home" class="section active">
+    <div class="stats-row" id="home-stats"><div class="spinner" style="grid-column:1/-1"></div></div>
+    <p class="qa-title">Quick Actions</p>
+    <div class="qa-grid">
+      <button class="qa-btn green"  onclick="openEggForm()">  <div class="qi">🥚</div><div class="ql">Log Egg Collection</div></button>
+      <button class="qa-btn orange" onclick="openFeedForm()"> <div class="qi">🌾</div><div class="ql">Log Feed Consumption</div></button>
+      <button class="qa-btn"        onclick="openMortForm()"> <div class="qi">📉</div><div class="ql">Log Mortality</div></button>
+      <button class="qa-btn"        onclick="goSec('flocks')"><div class="qi">🐔</div><div class="ql">View Flocks</div></button>
+    </div>
+    <p class="qa-title">My Recent Logs</p>
+    <div id="home-recent"><div class="spinner"></div></div>
+  </div>
+
+  <!-- FLOCKS -->
+  <div id="sec-flocks" class="section">
+    <p class="sec-title">Active Flocks</p>
+    <div id="flocks-list"><div class="spinner"></div></div>
+  </div>
+
+  <!-- MY LOGS -->
+  <div id="sec-logs" class="section">
+    <p class="sec-title">My Logs</p>
+    <div class="tabs">
+      <button class="tab active" onclick="switchLogTab('eggs',this)">Egg Collection</button>
+      <button class="tab"        onclick="switchLogTab('feed',this)">Feed Consumption</button>
+      <button class="tab"        onclick="switchLogTab('mort',this)">Mortality</button>
+    </div>
+    <div id="log-eggs"><div class="spinner"></div></div>
+    <div id="log-feed" style="display:none"></div>
+    <div id="log-mort" style="display:none"></div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav id="bottom-nav">
+    <button class="bnav-item active" onclick="goSec('home')"   data-sec="home">  <span class="bico">🏠</span>Home</button>
+    <button class="bnav-item"        onclick="goSec('flocks')" data-sec="flocks"><span class="bico">🐔</span>Flocks</button>
+    <button class="bnav-item"        onclick="goSec('logs')"   data-sec="logs">  <span class="bico">📋</span>My Logs</button>
+  </nav>
+</div>
+
+<!-- ═══════ FLOCK DETAIL ═══════ -->
+<div id="flock-detail">
+  <div class="fd-header">
+    <button class="fd-back" onclick="closeFlockDetail()">←</button>
+    <span class="fd-title" id="fd-title">Flock Detail</span>
+  </div>
+  <div class="fd-body" id="fd-body"><div class="spinner"></div></div>
+</div>
+
+<!-- ═══════ BOTTOM SHEET MODAL ═══════ -->
+<div id="modal-overlay" onclick="if(event.target===this)closeSheet()">
+  <div id="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-title">Form <button onclick="closeSheet()">×</button></div>
+    <div id="sheet-body"></div>
+    <p id="sheet-err" class="form-err"></p>
+    <button class="btn-submit" id="sheet-submit" onclick="sheetSubmit()">Save</button>
+  </div>
+</div>
+
+<!-- ═══════ TOAST ═══════ -->
+<div id="toast"></div>
+
+<script>
+  const API = 'https://jabman.online/pound_farming/API';
+  const TODAY = new Date().toISOString().split('T')[0];
+  let wAuth = JSON.parse(localStorage.getItem('pf_worker') || 'null');
+  let _flocks = [];
+  let _feeds  = [];
+  let _sheetFn = null;
+
+  // ── INIT ────────────────────────────────────────────────────────────
+  if (wAuth && wAuth.access_token) showApp();
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('tb-name').textContent = wAuth.name || 'Worker';
+    prefetch();
+    loadHome();
+  }
+
+  // ── AUTH ─────────────────────────────────────────────────────────────
+  async function handleLogin(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('l-err');
+    const btn   = document.getElementById('l-btn');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Logging in…';
+    const fd = new FormData();
+    fd.append('phone',    document.getElementById('l-phone').value.trim());
+    fd.append('password', document.getElementById('l-pass').value);
+    try {
+      const res = await post('/user/auth/login.php', fd, false);
+      if (res.status) {
+        wAuth = res.data;
+        localStorage.setItem('pf_worker', JSON.stringify(wAuth));
+        showApp();
+      } else {
+        errEl.textContent = res.text || 'Invalid phone or password.';
+        errEl.style.display = 'block';
+      }
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+    finally { btn.disabled = false; btn.textContent = 'Log In'; }
+  }
+
+  function doLogout() {
+    wAuth = null; localStorage.removeItem('pf_worker');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    toast('Logged out.');
+  }
+
+  // ── API ───────────────────────────────────────────────────────────────
+  async function get(path) {
+    const res = await fetch(API + path, { headers: { Authorization: 'Bearer ' + wAuth.access_token } });
+    return res.json();
+  }
+  async function post(path, fd, auth = true) {
+    const h = auth ? { Authorization: 'Bearer ' + wAuth.access_token } : {};
+    const res = await fetch(API + path, { method: 'POST', headers: h, body: fd });
+    return res.json();
+  }
+
+  // ── PREFETCH DROPDOWNS ────────────────────────────────────────────────
+  async function prefetch() {
+    try {
+      const [fl, fd] = await Promise.all([
+        get('/user/flock/view_all_flocks.php'),
+        get('/user/feed/view_all_feeds.php'),
+      ]);
+      _flocks = fl.data || [];
+      _feeds  = fd.data || [];
+    } catch {}
+  }
+
+  function flockOpts(sel='') {
+    return _flocks.map(f =>
+      `<option value="${f.id}"${f.id==sel?' selected':''}>${escH(f.batch_number)} — ${cap(f.bird_type)} (${f.current_count} birds)</option>`
+    ).join('');
+  }
+  function feedOpts(sel='') {
+    return _feeds.map(f =>
+      `<option value="${f.id}"${f.id==sel?' selected':''}>${escH(f.name)} (${cap(f.feed_type)})</option>`
+    ).join('');
+  }
+
+  // ── NAVIGATION ────────────────────────────────────────────────────────
+  function goSec(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('sec-' + name).classList.add('active');
+    document.querySelector(`.bnav-item[data-sec="${name}"]`)?.classList.add('active');
+    if (name === 'home')   loadHome();
+    if (name === 'flocks') loadFlocks();
+    if (name === 'logs')   loadLogs();
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────────
+  let _tt;
+  function toast(msg, type='') {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = type; el.style.display = 'block';
+    clearTimeout(_tt); _tt = setTimeout(() => el.style.display = 'none', 3200);
+  }
+
+  // ── MODAL SHEET ───────────────────────────────────────────────────────
+  function openSheet(title, bodyHtml, onSubmit) {
+    document.getElementById('sheet-title').innerHTML = escH(title) + ' <button onclick="closeSheet()">×</button>';
+    document.getElementById('sheet-body').innerHTML  = bodyHtml;
+    document.getElementById('sheet-err').style.display = 'none';
+    document.getElementById('sheet-submit').disabled    = false;
+    document.getElementById('sheet-submit').textContent = 'Save';
+    _sheetFn = onSubmit;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+  function closeSheet() { document.getElementById('modal-overlay').classList.remove('open'); _sheetFn = null; }
+  async function sheetSubmit() {
+    if (_sheetFn) {
+      document.getElementById('sheet-err').style.display = 'none';
+      const btn = document.getElementById('sheet-submit');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      await _sheetFn();
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+  function sheetErr(msg) {
+    const el = document.getElementById('sheet-err');
+    el.textContent = msg; el.style.display = 'block';
+  }
+  function fv(id) { return document.getElementById(id)?.value ?? ''; }
+
+  // ── UTILS ─────────────────────────────────────────────────────────────
+  function escH(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function cap(s)   { return s ? s.charAt(0).toUpperCase()+s.slice(1).replace(/_/g,' ') : '—'; }
+  function fmt(n)   { return '₦' + Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2}); }
+  function birdBadge(type) {
+    const cls = ['layer','broiler'].includes(type) ? `badge-${type}` : 'badge-other';
+    return `<span class="badge ${cls}">${cap(type)}</span>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // HOME
+  // ══════════════════════════════════════════════════════════════════
+  async function loadHome() {
+    document.getElementById('home-stats').innerHTML  = '<div class="spinner" style="grid-column:1/-1"></div>';
+    document.getElementById('home-recent').innerHTML = '<div class="spinner"></div>';
+    try {
+      const [eggs, feed, mort, flocks] = await Promise.all([
+        get('/user/egg_production/view_all_egg_production.php'),
+        get('/user/feed_consumption/view_all_feed_consumption.php'),
+        get('/user/mortality/view_all_mortality.php'),
+        get('/user/flock/view_all_flocks.php'),
+      ]);
+
+      const eggList  = eggs.data  || [];
+      const feedList = feed.data  || [];
+      const mortList = mort.data  || [];
+      const flkList  = flocks.data || [];
+
+      // Today's totals
+      const todayEggs = eggList.filter(r => r.collection_date === TODAY).reduce((s,r)=>s+parseInt(r.eggs_collected||0),0);
+      const todayFeed = feedList.filter(r => r.consumption_date === TODAY).reduce((s,r)=>s+parseFloat(r.quantity_kg||0),0);
+      const totalEggs = eggList.reduce((s,r)=>s+parseInt(r.eggs_collected||0),0);
+
+      document.getElementById('home-stats').innerHTML = `
+        <div class="stat-card"><span class="sc-icon">🥚</span><span class="sc-val">${todayEggs}</span><span class="sc-label">Eggs Today</span></div>
+        <div class="stat-card"><span class="sc-icon">🌾</span><span class="sc-val">${todayFeed.toFixed(1)}kg</span><span class="sc-label">Feed Today</span></div>
+        <div class="stat-card"><span class="sc-icon">🐔</span><span class="sc-val">${flkList.length}</span><span class="sc-label">Active Flocks</span></div>
+        <div class="stat-card"><span class="sc-icon">🗃️</span><span class="sc-val">${totalEggs}</span><span class="sc-label">Total Eggs Logged</span></div>`;
+
+      // Recent combined
+      const recent = [
+        ...eggList.slice(0,3).map(r=>({type:'egg',  icon:'🥚', label:`${r.eggs_collected} eggs collected`, sub:escH(r.batch_number||''), date:r.collection_date})),
+        ...feedList.slice(0,3).map(r=>({type:'feed', icon:'🌾', label:`${r.quantity_kg}kg ${escH(r.feed_name||'')} fed`, sub:escH(r.batch_number||''), date:r.consumption_date})),
+        ...mortList.slice(0,2).map(r=>({type:'mort', icon:'📉', label:`${r.count} bird(s) — ${cap(r.cause)}`, sub:escH(r.batch_number||''), date:r.mortality_date})),
+      ].sort((a,b) => b.date > a.date ? 1 : -1).slice(0,6);
+
+      if (!recent.length) {
+        document.getElementById('home-recent').innerHTML = '<div class="empty"><div class="ei">📋</div><p>No logs yet today. Use Quick Actions to get started.</p></div>';
+        return;
+      }
+      document.getElementById('home-recent').innerHTML = '<div class="card">' +
+        recent.map(r => `
+          <div class="log-item">
+            <div class="li-top">
+              <span style="font-size:.9rem">${r.icon} <strong>${r.label}</strong></span>
+              <span class="li-date">${r.date}</span>
+            </div>
+            <div class="li-sub">${r.sub}</div>
+          </div>`).join('') + '</div>';
+    } catch { document.getElementById('home-stats').innerHTML = '<p style="color:var(--muted);grid-column:1/-1">Could not load stats.</p>'; }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FLOCKS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadFlocks() {
+    document.getElementById('flocks-list').innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await get('/user/flock/view_all_flocks.php');
+      _flocks = res.data || [];
+      if (!_flocks.length) {
+        document.getElementById('flocks-list').innerHTML = '<div class="empty"><div class="ei">🐔</div><p>No active flocks found.</p></div>';
+        return;
+      }
+      document.getElementById('flocks-list').innerHTML = _flocks.map(f => `
+        <div class="card" onclick="openFlockDetail(${f.id})" style="cursor:pointer">
+          <div class="card-top">
+            <div>
+              <h4>${escH(f.batch_number)}</h4>
+              <p>${escH(f.farm_name||'')}</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              ${birdBadge(f.bird_type)}
+              <button class="btn-arrow">›</button>
+            </div>
+          </div>
+          <div class="meta-row">
+            <span>Birds: <strong>${f.current_count}</strong></span>
+            <span>Initial: <strong>${f.initial_count}</strong></span>
+            <span>Age: <strong>${f.age_weeks}wk</strong></span>
+            <span>Stocked: <strong>${f.date_stocked||'—'}</strong></span>
+          </div>
+        </div>`).join('');
+    } catch { document.getElementById('flocks-list').innerHTML = '<div class="empty">Could not load flocks.</div>'; }
+  }
+
+  async function openFlockDetail(id) {
+    document.getElementById('fd-title').textContent = 'Loading…';
+    document.getElementById('fd-body').innerHTML    = '<div class="spinner"></div>';
+    document.getElementById('flock-detail').classList.add('open');
+    try {
+      const res = await get('/user/flock/view_single_flock.php?id=' + id);
+      if (!res.status || !res.data) { document.getElementById('fd-body').innerHTML = '<p style="padding:1rem;color:var(--muted)">Flock not found.</p>'; return; }
+      const f = res.data;
+      document.getElementById('fd-title').textContent = f.batch_number;
+      document.getElementById('fd-body').innerHTML = `
+        <div class="fd-stat">
+          <h4>Flock Info</h4>
+          <div class="fd-row"><span class="dl">Batch #</span><span class="dv">${escH(f.batch_number)}</span></div>
+          <div class="fd-row"><span class="dl">Farm</span><span class="dv">${escH(f.farm_name||'—')}</span></div>
+          <div class="fd-row"><span class="dl">Bird Type</span><span class="dv">${cap(f.bird_type)}</span></div>
+          <div class="fd-row"><span class="dl">Status</span><span class="dv">${cap(f.status)}</span></div>
+        </div>
+        <div class="fd-stat">
+          <h4>Population</h4>
+          <div class="fd-row"><span class="dl">Initial Count</span><span class="dv">${f.initial_count}</span></div>
+          <div class="fd-row"><span class="dl">Current Count</span><span class="dv" style="color:var(--green);font-size:1.05rem">${f.current_count}</span></div>
+          <div class="fd-row"><span class="dl">Mortality</span><span class="dv" style="color:var(--red)">${parseInt(f.initial_count)-parseInt(f.current_count)} birds</span></div>
+          <div class="fd-row"><span class="dl">Age</span><span class="dv">${f.age_weeks} weeks</span></div>
+          <div class="fd-row"><span class="dl">Date Stocked</span><span class="dv">${f.date_stocked||'—'}</span></div>
+        </div>
+        ${f.notes ? `<div class="fd-stat"><h4>Notes</h4><p style="font-size:.88rem">${escH(f.notes)}</p></div>` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.25rem">
+          <button class="btn-submit" style="margin:0" onclick="openEggForm(${f.id})">Log Eggs</button>
+          <button class="btn-submit" style="margin:0;background:var(--orange)" onclick="openFeedForm(${f.id})">Log Feed</button>
+        </div>
+        <button class="btn-submit" style="margin-top:.75rem;background:#6c757d" onclick="openMortForm(${f.id})">Log Mortality</button>`;
+    } catch { document.getElementById('fd-body').innerHTML = '<p style="padding:1rem;color:var(--muted)">Could not load flock detail.</p>'; }
+  }
+
+  function closeFlockDetail() { document.getElementById('flock-detail').classList.remove('open'); }
+
+  // ══════════════════════════════════════════════════════════════════
+  // MY LOGS
+  // ══════════════════════════════════════════════════════════════════
+  let _logsLoaded = { eggs: false, feed: false, mort: false };
+
+  async function loadLogs() {
+    if (!_logsLoaded.eggs) loadEggLogs();
+  }
+
+  function switchLogTab(tab, el) {
+    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    ['eggs','feed','mort'].forEach(t => document.getElementById('log-'+t).style.display = 'none');
+    document.getElementById('log-' + tab).style.display = 'block';
+    if (tab === 'eggs' && !_logsLoaded.eggs) loadEggLogs();
+    if (tab === 'feed' && !_logsLoaded.feed) loadFeedLogs();
+    if (tab === 'mort' && !_logsLoaded.mort) loadMortLogs();
+  }
+
+  async function loadEggLogs() {
+    document.getElementById('log-eggs').innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await get('/user/egg_production/view_all_egg_production.php');
+      const list = res.data || [];
+      _logsLoaded.eggs = true;
+      if (!list.length) { document.getElementById('log-eggs').innerHTML = '<div class="empty"><div class="ei">🥚</div><p>No egg logs yet.</p></div>'; return; }
+      document.getElementById('log-eggs').innerHTML = '<div class="card">' +
+        list.map(r => `
+          <div class="log-item">
+            <div class="li-top">
+              <span>🥚 <strong>${r.eggs_collected} eggs</strong> (${r.broken_eggs} broken)</span>
+              <span class="li-date">${r.collection_date}</span>
+            </div>
+            <div class="li-sub">Batch: ${escH(r.batch_number||'—')}${r.notes ? ' · '+escH(r.notes) : ''}</div>
+          </div>`).join('') + '</div>';
+    } catch { document.getElementById('log-eggs').innerHTML = '<div class="empty">Could not load egg logs.</div>'; }
+  }
+
+  async function loadFeedLogs() {
+    document.getElementById('log-feed').innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await get('/user/feed_consumption/view_all_feed_consumption.php');
+      const list = res.data || [];
+      _logsLoaded.feed = true;
+      if (!list.length) { document.getElementById('log-feed').innerHTML = '<div class="empty"><div class="ei">🌾</div><p>No feed logs yet.</p></div>'; return; }
+      document.getElementById('log-feed').innerHTML = '<div class="card">' +
+        list.map(r => `
+          <div class="log-item">
+            <div class="li-top">
+              <span>🌾 <strong>${r.quantity_kg}kg</strong> ${escH(r.feed_name||'')}</span>
+              <span class="li-date">${r.consumption_date}</span>
+            </div>
+            <div class="li-sub">Batch: ${escH(r.batch_number||'—')}${r.notes ? ' · '+escH(r.notes) : ''}</div>
+          </div>`).join('') + '</div>';
+    } catch { document.getElementById('log-feed').innerHTML = '<div class="empty">Could not load feed logs.</div>'; }
+  }
+
+  async function loadMortLogs() {
+    document.getElementById('log-mort').innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await get('/user/mortality/view_all_mortality.php');
+      const list = res.data || [];
+      _logsLoaded.mort = true;
+      if (!list.length) { document.getElementById('log-mort').innerHTML = '<div class="empty"><div class="ei">📉</div><p>No mortality logs yet.</p></div>'; return; }
+      document.getElementById('log-mort').innerHTML = '<div class="card">' +
+        list.map(r => `
+          <div class="log-item">
+            <div class="li-top">
+              <span>📉 <strong>${r.count} bird(s)</strong> — ${cap(r.cause)}</span>
+              <span class="li-date">${r.mortality_date}</span>
+            </div>
+            <div class="li-sub">Batch: ${escH(r.batch_number||'—')}${r.notes ? ' · '+escH(r.notes) : ''}</div>
+          </div>`).join('') + '</div>';
+    } catch { document.getElementById('log-mort').innerHTML = '<div class="empty">Could not load mortality logs.</div>'; }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // LOG FORMS
+  // ══════════════════════════════════════════════════════════════════
+
+  // ── EGG COLLECTION ────────────────────────────────────────────────
+  function openEggForm(preFlockId='') {
+    openSheet('Log Egg Collection', `
+      <div class="form-group">
+        <label>Flock / Batch</label>
+        <select id="f-flock">${flockOpts(preFlockId)}</select>
+      </div>
+      <div class="form-2col">
+        <div class="form-group">
+          <label>Eggs Collected</label>
+          <input type="number" id="f-eggs" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label>Broken Eggs</label>
+          <input type="number" id="f-broken" min="0" value="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Collection Date</label>
+        <input type="date" id="f-date" value="${TODAY}" />
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <input type="text" id="f-notes" placeholder="Any observations…" />
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',        fv('f-flock'));
+      fd.append('eggs_collected',  fv('f-eggs'));
+      fd.append('broken_eggs',     fv('f-broken'));
+      fd.append('collection_date', fv('f-date'));
+      fd.append('notes',           fv('f-notes'));
+      const res = await post('/user/egg_production/add_egg_production.php', fd);
+      if (res.status) {
+        closeSheet(); toast('Egg collection logged!','ok');
+        _logsLoaded.eggs = false;
+        loadHome();
+      } else sheetErr(res.text || 'Failed to save.');
+    });
+  }
+
+  // ── FEED CONSUMPTION ─────────────────────────────────────────────
+  function openFeedForm(preFlockId='') {
+    openSheet('Log Feed Consumption', `
+      <div class="form-group">
+        <label>Flock / Batch</label>
+        <select id="f-flock">${flockOpts(preFlockId)}</select>
+      </div>
+      <div class="form-group">
+        <label>Feed</label>
+        <select id="f-feed">${feedOpts()}</select>
+      </div>
+      <div class="form-2col">
+        <div class="form-group">
+          <label>Quantity (kg)</label>
+          <input type="number" id="f-qty" min="0.1" step="0.1" placeholder="e.g. 5" />
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="f-date" value="${TODAY}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <input type="text" id="f-notes" placeholder="Any observations…" />
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',         fv('f-flock'));
+      fd.append('feed_id',          fv('f-feed'));
+      fd.append('quantity_kg',      fv('f-qty'));
+      fd.append('consumption_date', fv('f-date'));
+      fd.append('notes',            fv('f-notes'));
+      const res = await post('/user/feed_consumption/add_feed_consumption.php', fd);
+      if (res.status) {
+        closeSheet(); toast('Feed consumption logged!','ok');
+        _logsLoaded.feed = false;
+        loadHome();
+      } else sheetErr(res.text || 'Failed to save.');
+    });
+  }
+
+  // ── MORTALITY ────────────────────────────────────────────────────
+  function openMortForm(preFlockId='') {
+    const causes = ['disease','predator','injury','unknown','other'];
+    openSheet('Log Mortality', `
+      <div class="form-group">
+        <label>Flock / Batch</label>
+        <select id="f-flock">${flockOpts(preFlockId)}</select>
+      </div>
+      <div class="form-2col">
+        <div class="form-group">
+          <label>Bird Count</label>
+          <input type="number" id="f-count" min="1" value="1" />
+        </div>
+        <div class="form-group">
+          <label>Cause</label>
+          <select id="f-cause">${causes.map(c=>`<option value="${c}">${cap(c)}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="f-date" value="${TODAY}" />
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <input type="text" id="f-notes" placeholder="Brief description…" />
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',       fv('f-flock'));
+      fd.append('count',          fv('f-count'));
+      fd.append('cause',          fv('f-cause'));
+      fd.append('mortality_date', fv('f-date'));
+      fd.append('notes',          fv('f-notes'));
+      const res = await post('/user/mortality/add_mortality.php', fd);
+      if (res.status) {
+        closeSheet(); toast('Mortality logged.','ok');
+        _logsLoaded.mort = false;
+        loadHome();
+        prefetch(); // refresh flock counts
+      } else sheetErr(res.text || 'Failed to save.');
+    });
+  }
+</script>
+</body>
+</html>

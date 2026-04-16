@@ -1,0 +1,17 @@
+{
+    "name": "hi/test",
+    "autoload": {
+        "psr-4": {
+            "Hi\\Test\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Jabatar1992",
+            "email": "tundejabatar@gmail.com"
+        }
+    ],
+    "require": {
+        "firebase/php-jwt": "^7.0"
+    }
+}

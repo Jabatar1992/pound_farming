@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oloyin-Fresh Eggs — Farm Fresh Eggs Delivered</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:    #2d6a4f;
+      --green-lt: #52b788;
+      --green-bg: #d8f3dc;
+      --orange:   #f77f00;
+      --orange-lt:#ffd166;
+      --text:     #1a1a2e;
+      --muted:    #6c757d;
+      --bg:       #f4f6f3;
+      --card:     #ffffff;
+      --border:   #dee2e6;
+      --radius:   12px;
+      --shadow:   0 2px 12px rgba(0,0,0,.08);
+      --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+    }
+
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* ── NAVBAR ────────────────────────────────────────────────── */
+    nav {
+      background:var(--green); color:#fff; padding:.9rem 1.5rem;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.2);
+    }
+    .nav-brand {
+      font-family:'Poppins',sans-serif; cursor:pointer;
+      display:flex; align-items:center; gap:.55rem; line-height:1;
+    }
+    .nav-brand .brand-icon { font-size:1.65rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+    .nav-brand .brand-text { display:flex; flex-direction:column; }
+    .nav-brand .brand-main {
+      font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#fff;
+      text-transform:uppercase;
+    }
+    .nav-brand .brand-main em { font-style:normal; color:var(--orange-lt); }
+    .nav-brand .brand-sub {
+      font-size:.65rem; font-weight:600; letter-spacing:.18em; color:rgba(255,255,255,.7);
+      text-transform:uppercase; margin-top:1px;
+    }
+    .nav-links { display:flex; align-items:center; gap:.75rem; }
+    .nav-links a, .nav-links button {
+      background:none; border:none; color:#fff; cursor:pointer; font-size:.9rem;
+      padding:.45rem .9rem; border-radius:8px; transition:background .2s; text-decoration:none;
+    }
+    .nav-links a:hover, .nav-links button:hover { background:rgba(255,255,255,.15); }
+    .btn-primary {
+      background:var(--orange) !important; color:#fff !important; font-weight:600;
+      border-radius:8px !important; padding:.45rem 1.1rem !important;
+    }
+    .btn-primary:hover { background:#e06900 !important; }
+    #nav-user { display:none; align-items:center; gap:.5rem; }
+    #nav-user .user-name { font-size:.9rem; opacity:.85; }
+
+    /* ── VIEWS ──────────────────────────────────────────────────── */
+    .view { display:none; }
+    .view.active { display:block; }
+
+    /* ── HERO ────────────────────────────────────────────────────── */
+    .hero {
+      background:linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%);
+      color:#fff; text-align:center; padding:4rem 1.5rem 3rem;
+    }
+    .hero h1 { font-size:2.4rem; font-weight:800; margin-bottom:.75rem; }
+    .hero p  { font-size:1.1rem; opacity:.9; max-width:500px; margin:0 auto 1.5rem; }
+    .hero-btn {
+      display:inline-block; background:var(--orange); color:#fff; font-weight:700;
+      padding:.8rem 2rem; border-radius:10px; font-size:1rem; cursor:pointer;
+      border:none; transition:transform .15s,background .2s;
+    }
+    .hero-btn:hover { background:#e06900; transform:translateY(-2px); }
+
+    /* ── SECTION HEADER ────────────────────────────────────────── */
+    .section-title {
+      max-width:1100px; margin:2rem auto .5rem; padding:0 1.5rem;
+      font-size:1.5rem; font-weight:700; color:var(--green);
+    }
+    .section-sub { max-width:1100px; margin:0 auto 1.5rem; padding:0 1.5rem; color:var(--muted); }
+
+    /* ── LISTINGS GRID ─────────────────────────────────────────── */
+    .listings-grid {
+      max-width:1100px; margin:0 auto 3rem; padding:0 1.5rem;
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1.25rem;
+    }
+    .egg-card {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden; transition:transform .2s,box-shadow .2s;
+    }
+    .egg-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
+    .card-header {
+      background:linear-gradient(135deg,var(--green-bg),#b7e4c7);
+      padding:1.25rem 1.25rem .75rem; display:flex; align-items:center; gap:.75rem;
+    }
+    .egg-icon { font-size:2.5rem; }
+    .card-header-info h3 { font-size:1.05rem; font-weight:700; color:var(--green); }
+    .card-header-info p  { font-size:.82rem; color:var(--muted); margin-top:.15rem; }
+    .card-body { padding:1rem 1.25rem; }
+    .card-stat { display:flex; justify-content:space-between; margin-bottom:.5rem; font-size:.88rem; }
+    .card-stat .label { color:var(--muted); }
+    .card-stat .value { font-weight:600; }
+    .price-badge {
+      background:var(--green); color:#fff; border-radius:8px;
+      text-align:center; padding:.6rem; margin:.75rem 0 1rem; font-size:1.15rem; font-weight:700;
+    }
+    .price-badge small { font-size:.75rem; font-weight:400; opacity:.85; }
+    .btn-book {
+      width:100%; background:var(--orange); color:#fff; border:none; border-radius:8px;
+      padding:.65rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:background .2s;
+    }
+    .btn-book:hover { background:#e06900; }
+    .btn-book:disabled { background:#ccc; cursor:not-allowed; }
+    .out-badge { text-align:center; color:var(--muted); font-size:.85rem; padding:.5rem; }
+
+    /* ── EMPTY / LOADING ────────────────────────────────────────── */
+    .empty-box {
+      text-align:center; padding:3rem 1.5rem; color:var(--muted);
+      grid-column:1/-1;
+    }
+    .empty-box .icon { font-size:3rem; margin-bottom:.75rem; }
+    .spinner {
+      width:40px; height:40px; border:4px solid var(--border);
+      border-top-color:var(--green); border-radius:50%;
+      animation:spin .8s linear infinite; margin:2rem auto;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── BOOKINGS PAGE ─────────────────────────────────────────── */
+    .page-container { max-width:900px; margin:0 auto; padding:1.5rem; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+    .page-header h2 { font-size:1.4rem; font-weight:700; color:var(--green); }
+    .booking-card {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:1.25rem; margin-bottom:1rem; display:grid;
+      grid-template-columns:1fr auto; gap:.5rem; align-items:start;
+      cursor:pointer; transition:box-shadow .2s;
+    }
+    .booking-card:hover { box-shadow:var(--shadow-lg); }
+    .booking-id   { font-size:.8rem; color:var(--muted); }
+    .booking-info { margin:.25rem 0; font-size:.93rem; }
+    .booking-info strong { color:var(--text); }
+    .booking-meta { display:flex; gap:.75rem; flex-wrap:wrap; margin-top:.5rem; }
+    .tag {
+      padding:.2rem .65rem; border-radius:20px; font-size:.78rem; font-weight:600;
+    }
+    .tag-pending    { background:#fff3cd; color:#856404; }
+    .tag-confirmed  { background:#cfe2ff; color:#084298; }
+    .tag-paid       { background:#d1e7dd; color:#0a3622; }
+    .tag-dispatched { background:#e2d9f3; color:#432874; }
+    .tag-delivered  { background:var(--green-bg); color:var(--green); }
+    .tag-cancelled  { background:#f8d7da; color:#842029; }
+    .tag-unpaid     { background:#fff3cd; color:#856404; }
+
+    /* ── BOOKING DETAIL ─────────────────────────────────────────── */
+    .detail-card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:1.5rem; margin-bottom:1.25rem; }
+    .detail-card h3 { font-size:1.05rem; font-weight:700; margin-bottom:1rem; color:var(--green); border-bottom:1px solid var(--border); padding-bottom:.5rem; }
+    .detail-row { display:flex; justify-content:space-between; margin-bottom:.6rem; font-size:.9rem; }
+    .detail-row .dl { color:var(--muted); }
+    .detail-row .dv { font-weight:600; text-align:right; }
+    .timeline { list-style:none; position:relative; padding-left:1.5rem; }
+    .timeline::before { content:''; position:absolute; left:.5rem; top:0; bottom:0; width:2px; background:var(--border); }
+    .timeline li { position:relative; margin-bottom:1.1rem; }
+    .timeline li::before {
+      content:''; position:absolute; left:-1.05rem; top:.3rem;
+      width:12px; height:12px; border-radius:50%; background:var(--green-lt); border:2px solid var(--green);
+    }
+    .tl-status { font-weight:700; font-size:.9rem; color:var(--green); }
+    .tl-note   { font-size:.85rem; color:var(--muted); margin:.15rem 0; }
+    .tl-date   { font-size:.78rem; color:var(--muted); }
+    .action-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem; }
+    /* ── PAYMENT OPTIONS ─────────────────────────── */
+    .pay-option {
+      display:flex; align-items:center; gap:.85rem; padding:.85rem 1rem;
+      border:2px solid var(--border); border-radius:10px; cursor:pointer;
+      transition:border-color .15s, background .15s;
+    }
+    .pay-option:hover { border-color:var(--green-lt); background:#f5fff8; }
+    .pay-option.selected { border-color:var(--green); background:#edf7f1; }
+    .pay-option .pay-icon { font-size:1.6rem; flex-shrink:0; }
+    .pay-option strong { font-size:.95rem; display:block; color:var(--text); }
+    .pay-option p { font-size:.78rem; color:var(--muted); margin:0; }
+
+    .btn-pay {
+      background:var(--green); color:#fff; border:none; border-radius:8px;
+      padding:.65rem 1.5rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:background .2s;
+    }
+    .btn-pay:hover { background:#1f5038; }
+    .btn-cancel {
+      background:#fff; color:#842029; border:1px solid #f5c6cb; border-radius:8px;
+      padding:.65rem 1.5rem; font-size:.95rem; font-weight:600; cursor:pointer; transition:background .2s;
+    }
+    .btn-cancel:hover { background:#f8d7da; }
+    .btn-back {
+      background:#fff; color:var(--green); border:1px solid var(--green); border-radius:8px;
+      padding:.55rem 1.2rem; font-size:.88rem; font-weight:600; cursor:pointer; transition:background .2s;
+    }
+    .btn-back:hover { background:var(--green-bg); }
+
+    /* ── MODAL / FORM ───────────────────────────────────────────── */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+      z-index:200; align-items:center; justify-content:center; padding:1rem;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow-lg);
+      padding:2rem; width:100%; max-width:460px; max-height:90vh; overflow-y:auto;
+      animation:slideUp .25s ease;
+    }
+    @keyframes slideUp { from { transform:translateY(30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+    .modal h2 { font-size:1.3rem; font-weight:700; color:var(--green); margin-bottom:1.25rem; }
+    .form-group { margin-bottom:1rem; }
+    .form-group label { display:block; font-size:.85rem; font-weight:600; color:var(--muted); margin-bottom:.35rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:.65rem .9rem; border:1.5px solid var(--border); border-radius:8px;
+      font-size:.93rem; font-family:inherit; color:var(--text); background:#fff;
+      transition:border-color .2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline:none; border-color:var(--green-lt);
+    }
+    .form-group textarea { resize:vertical; min-height:70px; }
+    .form-error { font-size:.82rem; color:#842029; margin-top:.3rem; display:none; }
+    .btn-submit {
+      width:100%; background:var(--green); color:#fff; border:none; border-radius:8px;
+      padding:.75rem; font-size:1rem; font-weight:700; cursor:pointer; margin-top:.5rem;
+      transition:background .2s;
+    }
+    .btn-submit:hover { background:#1f5038; }
+    .btn-submit:disabled { background:#aaa; cursor:not-allowed; }
+    .modal-close {
+      float:right; background:none; border:none; font-size:1.4rem; cursor:pointer;
+      color:var(--muted); margin-top:-.5rem;
+    }
+    .modal-footer { text-align:center; margin-top:1rem; font-size:.88rem; color:var(--muted); }
+    .modal-footer a { color:var(--green); cursor:pointer; font-weight:600; }
+    .divider { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
+    .summary-box {
+      background:var(--green-bg); border-radius:8px; padding:1rem; margin:1rem 0; font-size:.88rem;
+    }
+    .summary-box p { display:flex; justify-content:space-between; margin-bottom:.3rem; }
+    .summary-box .total { font-weight:700; font-size:1rem; }
+
+    /* ── TOAST ─────────────────────────────────────────────────── */
+    #toast {
+      position:fixed; bottom:1.5rem; right:1.5rem; z-index:999;
+      background:var(--text); color:#fff; padding:.8rem 1.25rem;
+      border-radius:10px; font-size:.9rem; max-width:300px;
+      box-shadow:var(--shadow-lg); display:none;
+      animation:fadeInUp .3s ease;
+    }
+    #toast.success { background:var(--green); }
+    #toast.error   { background:#842029; }
+    @keyframes fadeInUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+    /* ── RESPONSIVE ─────────────────────────────────────────────── */
+    @media (max-width:600px) {
+      .hero h1 { font-size:1.7rem; }
+      .nav-links .hide-sm { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav>
+  <div class="nav-brand" onclick="showView('home')">
+    <span class="brand-icon">🥚</span>
+    <span class="brand-text">
+      <span class="brand-main">Oloyin<em>-Fresh</em></span>
+      <span class="brand-sub">Farm Fresh Eggs</span>
+    </span>
+  </div>
+  <div class="nav-links">
+    <a onclick="showView('home')">Browse Eggs</a>
+    <div id="nav-guest">
+      <button onclick="openModal('loginModal')">Log In</button>
+      <button class="btn-primary" onclick="openModal('registerModal')">Sign Up</button>
+    </div>
+    <div id="nav-user">
+      <button class="hide-sm" onclick="showView('bookings')">My Orders</button>
+      <button class="hide-sm" onclick="showView('profile')">Profile</button>
+      <span class="user-name" id="nav-user-name"></span>
+      <button onclick="logout()">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════ HOME VIEW ═══════════════ -->
+<div id="view-home" class="view active">
+  <div class="hero">
+    <h1>Oloyin-Fresh Eggs, Delivered</h1>
+    <p>Order directly from the farm. No middlemen, no preservatives — just fresh eggs from happy hens.</p>
+    <button class="hero-btn" onclick="scrollToListings()">Shop Now</button>
+  </div>
+
+  <h2 class="section-title" id="listings-anchor">Available Egg Listings</h2>
+  <p class="section-sub">Select a listing to place your order.</p>
+
+  <div class="listings-grid" id="listings-container">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ MY BOOKINGS VIEW ═══════════════ -->
+<div id="view-bookings" class="view">
+  <div class="page-container">
+    <div class="page-header">
+      <h2>My Orders</h2>
+      <button class="btn-back" onclick="showView('home')">← Browse Eggs</button>
+    </div>
+    <div id="bookings-container"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ BOOKING DETAIL VIEW ═══════════════ -->
+<div id="view-booking-detail" class="view">
+  <div class="page-container">
+    <div class="page-header">
+      <h2>Order Detail</h2>
+      <button class="btn-back" onclick="showView('bookings')">← My Orders</button>
+    </div>
+    <div id="booking-detail-container"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PROFILE VIEW ═══════════════ -->
+<div id="view-profile" class="view">
+  <div class="page-container" style="max-width:560px">
+    <div class="page-header">
+      <h2>My Profile</h2>
+      <button class="btn-back" onclick="showView('home')">← Home</button>
+    </div>
+
+    <!-- Account info card -->
+    <div class="detail-card" id="profile-info-card">
+      <h3>Account Information</h3>
+      <div class="spinner" id="profile-spinner"></div>
+      <div id="profile-display" style="display:none">
+        <div class="detail-row"><span class="dl">Name</span><span class="dv" id="pi-name"></span></div>
+        <div class="detail-row"><span class="dl">Phone</span><span class="dv" id="pi-phone"></span></div>
+        <div class="detail-row"><span class="dl">Email</span><span class="dv" id="pi-email"></span></div>
+        <div class="detail-row"><span class="dl">Address</span><span class="dv" id="pi-address" style="max-width:220px;text-align:right"></span></div>
+        <div class="detail-row"><span class="dl">Member Since</span><span class="dv" id="pi-since"></span></div>
+        <div class="action-row">
+          <button class="btn-pay" onclick="toggleEditForm(true)">Edit Profile</button>
+          <button class="btn-pay" style="background:var(--orange)" onclick="showView('bookings')">My Orders</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit form (hidden by default) -->
+    <div class="detail-card" id="profile-edit-card" style="display:none">
+      <h3>Update Profile</h3>
+      <form id="profileForm" onsubmit="handleUpdateProfile(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="edit-name" required />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="edit-phone" required />
+        </div>
+        <div class="form-group">
+          <label>Delivery Address</label>
+          <textarea id="edit-address"></textarea>
+        </div>
+        <hr class="divider" />
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem">Leave password fields blank to keep your current password.</p>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="edit-password" placeholder="At least 6 characters" />
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="edit-password-confirm" placeholder="Repeat new password" />
+        </div>
+        <p id="profile-error" class="form-error"></p>
+        <div class="action-row">
+          <button type="submit" class="btn-pay" id="profile-save-btn">Save Changes</button>
+          <button type="button" class="btn-cancel" onclick="toggleEditForm(false)">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="detail-card">
+      <h3 style="color:#842029">Account</h3>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:1rem">Logging out removes your session from this device.</p>
+      <button class="btn-cancel" onclick="logout()">Log Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ LOGIN MODAL ═══════════════ -->
+<div id="loginModal" class="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+    <h2>Welcome Back</h2>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" required />
+      </div>
+      <p id="login-error" class="form-error"></p>
+      <button type="submit" class="btn-submit" id="login-btn">Log In</button>
+    </form>
+    <div class="modal-footer">
+      Don't have an account? <a onclick="switchModal('loginModal','registerModal')">Sign Up</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ REGISTER MODAL ═══════════════ -->
+<div id="registerModal" class="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('registerModal')">×</button>
+    <h2>Create Account</h2>
+    <form id="registerForm" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" placeholder="Amina Yusuf" required />
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="reg-phone" placeholder="08012345678" required />
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="At least 6 characters" required />
+      </div>
+      <div class="form-group">
+        <label>Delivery Address <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <textarea id="reg-address" placeholder="No. 5 Farm Road, Ilorin..."></textarea>
+      </div>
+      <p id="reg-error" class="form-error"></p>
+      <button type="submit" class="btn-submit" id="reg-btn">Create Account</button>
+    </form>
+    <div class="modal-footer">
+      Already have an account? <a onclick="switchModal('registerModal','loginModal')">Log In</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAYMENT METHOD MODAL ═══════════ -->
+<div id="payModal" class="modal-overlay">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('payModal')">×</button>
+    <h2>Choose Payment Method</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem">
+      Total: <strong id="pay-modal-amount" style="color:var(--green);font-size:1rem"></strong>
+    </p>
+
+    <div style="display:flex;flex-direction:column;gap:.65rem;margin-bottom:1rem">
+      <div class="pay-option" data-method="paystack" onclick="selectPayMethod('paystack')">
+        <span class="pay-icon">💳</span>
+        <div>
+          <strong>Paystack</strong>
+          <p>Card, Bank, USSD, QR Code</p>
+        </div>
+      </div>
+      <div class="pay-option" data-method="flutterwave" onclick="selectPayMethod('flutterwave')">
+        <span class="pay-icon">🌊</span>
+        <div>
+          <strong>Flutterwave</strong>
+          <p>Card, Bank Transfer, Mobile Money</p>
+        </div>
+      </div>
+      <div class="pay-option" data-method="bank_transfer" onclick="selectPayMethod('bank_transfer')">
+        <span class="pay-icon">🏦</span>
+        <div>
+          <strong>Bank Transfer</strong>
+          <p>Transfer directly to our account</p>
+        </div>
+      </div>
+      <div class="pay-option" data-method="cod" onclick="selectPayMethod('cod')">
+        <span class="pay-icon">💵</span>
+        <div>
+          <strong>Pay on Delivery</strong>
+          <p>Pay cash when order arrives</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bank Transfer details form -->
+    <div id="pay-bank-transfer-form" style="display:none;background:#f0faf4;border-radius:10px;padding:1rem;margin-bottom:1rem">
+      <p style="font-size:.85rem;margin-bottom:.75rem;color:var(--green)"><strong>Transfer to:</strong></p>
+      <p style="font-size:.88rem;margin-bottom:.3rem">Bank: <strong>First Bank Nigeria</strong></p>
+      <p style="font-size:.88rem;margin-bottom:.3rem">Account: <strong>1234567890</strong></p>
+      <p style="font-size:.88rem;margin-bottom:1rem">Name: <strong>Oloyin Fresh Eggs</strong></p>
+      <div class="form-group" style="margin-bottom:.65rem">
+        <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem">Transfer Reference / Teller No.</label>
+        <input type="text" id="bt-ref" placeholder="e.g. 123456789" style="width:100%;padding:.5rem .75rem;border:1.5px solid #ccc;border-radius:7px;font-size:.9rem" />
+      </div>
+      <div class="form-group" style="margin-bottom:.65rem">
+        <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem">Your Bank Name</label>
+        <input type="text" id="bt-bank" placeholder="e.g. Access Bank" style="width:100%;padding:.5rem .75rem;border:1.5px solid #ccc;border-radius:7px;font-size:.9rem" />
+      </div>
+      <div class="form-group">
+        <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem">Transfer Date</label>
+        <input type="date" id="bt-date" style="width:100%;padding:.5rem .75rem;border:1.5px solid #ccc;border-radius:7px;font-size:.9rem" />
+      </div>
+    </div>
+
+    <p id="pay-method-err" style="display:none;color:#c0392b;font-size:.85rem;margin-bottom:.75rem"></p>
+    <button id="pay-confirm-btn" class="btn-submit" onclick="confirmPayment()">Proceed</button>
+  </div>
+</div>
+
+<!-- ═══════════════ BOOKING MODAL ═══════════════ -->
+<div id="bookingModal" class="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('bookingModal')">×</button>
+    <h2>Place Order</h2>
+    <div id="booking-listing-info"></div>
+    <hr class="divider" />
+    <form id="bookingForm" onsubmit="handleCreateBooking(event)">
+      <input type="hidden" id="book-availability-id" />
+      <input type="hidden" id="book-price-per-crate" />
+      <input type="hidden" id="book-max-crates" />
+      <div class="form-group">
+        <label>Number of Crates <span style="color:var(--muted);font-weight:400">(1 crate = 30 eggs)</span></label>
+        <input type="number" id="book-quantity" min="1" placeholder="e.g. 5" required oninput="updateBookingSummary()" />
+      </div>
+      <div class="form-group">
+        <label>Delivery Address</label>
+        <textarea id="book-address" placeholder="Enter your full delivery address" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Preferred Delivery Date <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <input type="date" id="book-date" />
+      </div>
+      <div class="form-group">
+        <label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <textarea id="book-notes" placeholder="Any special instructions..."></textarea>
+      </div>
+      <div class="summary-box" id="booking-summary" style="display:none">
+        <p><span>Price per crate:</span><span id="sum-unit"></span></p>
+        <p><span>Quantity:</span><span id="sum-qty"></span></p>
+        <p class="total"><span>Total:</span><span id="sum-total"></span></p>
+      </div>
+      <p id="booking-error" class="form-error"></p>
+      <button type="submit" class="btn-submit" id="booking-btn">Confirm Order</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div id="toast"></div>
+
+<script>
+  // ── CONFIG ─────────────────────────────────────────────────────────
+  const API = 'https://jabman.online/pound_farming/API';
+
+  // ── AUTH STATE ─────────────────────────────────────────────────────
+  let auth = JSON.parse(localStorage.getItem('pf_auth') || 'null');
+
+  function saveAuth(data) {
+    auth = data;
+    localStorage.setItem('pf_auth', JSON.stringify(data));
+    updateNavUI();
+  }
+
+  function logout() {
+    auth = null;
+    localStorage.removeItem('pf_auth');
+    updateNavUI();
+    showView('home');
+    toast('Logged out successfully.');
+  }
+
+  function updateNavUI() {
+    const guestEl = document.getElementById('nav-guest');
+    const userEl  = document.getElementById('nav-user');
+    const nameEl  = document.getElementById('nav-user-name');
+    if (auth && auth.access_token) {
+      guestEl.style.display = 'none';
+      userEl.style.display  = 'flex';
+      nameEl.textContent    = auth.name || 'Buyer';
+    } else {
+      guestEl.style.display = 'flex';
+      userEl.style.display  = 'none';
+    }
+  }
+
+  // ── VIEWS ────────────────────────────────────────────────────────────
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+    history.replaceState(null, '', '#' + name);
+    if (name === 'home')     loadListings();
+    if (name === 'bookings') loadMyBookings();
+    if (name === 'profile')  loadProfile();
+  }
+
+  function scrollToListings() {
+    document.getElementById('listings-anchor').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── API HELPER ───────────────────────────────────────────────────────
+  async function apiFetch(path, opts = {}) {
+    const headers = { ...(opts.headers || {}) };
+    if (auth && auth.access_token) {
+      headers['Authorization'] = 'Bearer ' + auth.access_token;
+    }
+    const res = await fetch(API + path, { ...opts, headers });
+    return res.json();
+  }
+
+  async function apiPost(path, formData) {
+    const headers = {};
+    if (auth && auth.access_token) {
+      headers['Authorization'] = 'Bearer ' + auth.access_token;
+    }
+    const res = await fetch(API + path, { method: 'POST', headers, body: formData });
+    return res.json();
+  }
+
+  // ── TOAST ────────────────────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = type;
+    el.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+  }
+
+  // ── MODALS ───────────────────────────────────────────────────────────
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+  function switchModal(from, to) {
+    closeModal(from);
+    openModal(to);
+  }
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // ── MONEY FORMAT ────────────────────────────────────────────────────
+  function fmt(n) {
+    return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+  }
+
+  // ── LISTINGS ─────────────────────────────────────────────────────────
+  async function loadListings() {
+    const container = document.getElementById('listings-container');
+    container.innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await apiFetch('/buyer/availability/view_availability.php');
+      if (!res.status || !res.data || res.data.length === 0) {
+        container.innerHTML = `
+          <div class="empty-box">
+            <div class="icon">🥚</div>
+            <p>No egg listings available right now. Check back soon!</p>
+          </div>`;
+        return;
+      }
+      container.innerHTML = res.data.map(renderEggCard).join('');
+    } catch (e) {
+      container.innerHTML = `<div class="empty-box"><div class="icon">⚠️</div><p>Could not load listings. Please check your connection.</p></div>`;
+    }
+  }
+
+  function renderEggCard(item) {
+    const available = parseInt(item.available_crates) > 0;
+    return `
+    <div class="egg-card">
+      <div class="card-header">
+        <div class="egg-icon">🥚</div>
+        <div class="card-header-info">
+          <h3>${escHtml(item.farm_name)}</h3>
+          <p>${capitalize(item.bird_type)} Eggs</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stat">
+          <span class="label">Available Crates</span>
+          <span class="value">${item.available_crates}</span>
+        </div>
+        <div class="card-stat">
+          <span class="label">Total Eggs</span>
+          <span class="value">${parseInt(item.available_crates) * 30} eggs</span>
+        </div>
+        ${item.description ? `<div class="card-stat"><span class="label">Note</span><span class="value" style="max-width:160px;text-align:right;font-size:.82rem">${escHtml(item.description)}</span></div>` : ''}
+        <div class="price-badge">
+          ${fmt(item.price_per_crate)} <small>/ crate (30 eggs)</small>
+        </div>
+        ${available
+          ? `<button class="btn-book" onclick="openBookingModal(${item.id}, ${item.price_per_crate}, ${item.available_crates}, '${escAttr(item.farm_name)}', '${escAttr(item.bird_type)}')">Order Now</button>`
+          : `<div class="out-badge">Out of stock</div>`
+        }
+      </div>
+    </div>`;
+  }
+
+  // ── BOOKING MODAL ─────────────────────────────────────────────────────
+  function openBookingModal(availId, price, maxCrates, farmName, birdType) {
+    if (!auth || !auth.access_token) {
+      openModal('loginModal');
+      toast('Please log in to place an order.', 'error');
+      return;
+    }
+    document.getElementById('book-availability-id').value = availId;
+    document.getElementById('book-price-per-crate').value  = price;
+    document.getElementById('book-max-crates').value       = maxCrates;
+    document.getElementById('book-quantity').max           = maxCrates;
+    document.getElementById('book-quantity').value         = '';
+    document.getElementById('book-address').value          = auth.address || '';
+    document.getElementById('book-date').value             = '';
+    document.getElementById('book-notes').value            = '';
+    document.getElementById('booking-summary').style.display = 'none';
+    document.getElementById('booking-error').style.display   = 'none';
+
+    document.getElementById('booking-listing-info').innerHTML = `
+      <div style="display:flex;gap:.75rem;align-items:center;background:var(--green-bg);padding:.75rem;border-radius:8px">
+        <span style="font-size:2rem">🥚</span>
+        <div>
+          <strong>${escHtml(farmName)}</strong><br>
+          <span style="font-size:.85rem;color:var(--muted)">${capitalize(birdType)} eggs &bull; Max ${maxCrates} crates &bull; ${fmt(price)}/crate</span>
+        </div>
+      </div>`;
+
+    openModal('bookingModal');
+  }
+
+  function updateBookingSummary() {
+    const qty   = parseInt(document.getElementById('book-quantity').value) || 0;
+    const price = parseFloat(document.getElementById('book-price-per-crate').value) || 0;
+    const max   = parseInt(document.getElementById('book-max-crates').value) || 0;
+    const sumEl = document.getElementById('booking-summary');
+    if (qty > 0 && price > 0) {
+      document.getElementById('sum-unit').textContent  = fmt(price);
+      document.getElementById('sum-qty').textContent   = qty + ' crate(s)';
+      document.getElementById('sum-total').textContent = fmt(qty * price);
+      sumEl.style.display = 'block';
+    } else {
+      sumEl.style.display = 'none';
+    }
+    const errEl = document.getElementById('booking-error');
+    if (qty > max) {
+      errEl.textContent    = `Only ${max} crate(s) available.`;
+      errEl.style.display  = 'block';
+    } else {
+      errEl.style.display  = 'none';
+    }
+  }
+
+  async function handleCreateBooking(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('booking-error');
+    const btn   = document.getElementById('booking-btn');
+    errEl.style.display = 'none';
+
+    const qty  = parseInt(document.getElementById('book-quantity').value);
+    const max  = parseInt(document.getElementById('book-max-crates').value);
+    const addr = document.getElementById('book-address').value.trim();
+
+    if (!qty || qty < 1) { errEl.textContent = 'Enter a valid quantity.'; errEl.style.display = 'block'; return; }
+    if (qty > max)       { errEl.textContent = `Only ${max} crate(s) available.`; errEl.style.display = 'block'; return; }
+    if (!addr)           { errEl.textContent = 'Delivery address is required.'; errEl.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Placing order…';
+
+    const fd = new FormData();
+    fd.append('availability_id',  document.getElementById('book-availability-id').value);
+    fd.append('quantity_crates',  qty);
+    fd.append('delivery_address', addr);
+    const date  = document.getElementById('book-date').value;
+    const notes = document.getElementById('book-notes').value.trim();
+    if (date)  fd.append('delivery_date', date);
+    if (notes) fd.append('notes', notes);
+
+    try {
+      const res = await apiPost('/buyer/booking/create_booking.php', fd);
+      if (res.status) {
+        closeModal('bookingModal');
+        toast('Order placed! Proceed to payment.', 'success');
+        loadListings();
+        if (res.data && res.data.id) openBookingDetail(res.data.id);
+      } else {
+        errEl.textContent   = res.text || 'Failed to place order.';
+        errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Confirm Order';
+    }
+  }
+
+  // ── MY BOOKINGS ──────────────────────────────────────────────────────
+  async function loadMyBookings() {
+    if (!auth) { showView('home'); openModal('loginModal'); return; }
+    const container = document.getElementById('bookings-container');
+    container.innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await apiFetch('/buyer/booking/view_my_bookings.php');
+      if (!res.status) { container.innerHTML = '<p style="color:var(--muted)">Could not load orders.</p>'; return; }
+      const list = res.data || [];
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-box">
+            <div class="icon">📦</div>
+            <p>You have no orders yet. <a style="color:var(--green);cursor:pointer" onclick="showView('home')">Browse egg listings</a></p>
+          </div>`;
+        return;
+      }
+      container.innerHTML = list.map(b => `
+        <div class="booking-card" onclick="openBookingDetail(${b.id})">
+          <div>
+            <div class="booking-id">Order #${b.id}</div>
+            <div class="booking-info">
+              <strong>${capitalize(b.bird_type)} Eggs</strong> from ${escHtml(b.farm_name)}
+            </div>
+            <div class="booking-info">${b.quantity_crates} crate(s) &bull; ${fmt(b.total_amount)}</div>
+            <div class="booking-info" style="font-size:.82rem;color:var(--muted)">${b.delivery_address}</div>
+            <div class="booking-meta">
+              <span class="tag tag-${b.order_status}">${b.order_status}</span>
+              <span class="tag tag-${b.payment_status}">${b.payment_status}</span>
+            </div>
+          </div>
+          <div style="color:var(--muted);font-size:1.2rem;align-self:center">›</div>
+        </div>`).join('');
+    } catch {
+      container.innerHTML = '<p style="color:var(--muted)">Network error loading orders.</p>';
+    }
+  }
+
+  // ── BOOKING DETAIL ────────────────────────────────────────────────────
+  async function openBookingDetail(id) {
+    if (!auth) { openModal('loginModal'); return; }
+    showView('booking-detail');
+    const container = document.getElementById('booking-detail-container');
+    container.innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await apiFetch('/buyer/booking/view_single_booking.php?id=' + id);
+      if (!res.status || !res.data) { container.innerHTML = '<p>Order not found.</p>'; return; }
+      const b = res.data;
+      const timeline = b.tracking_timeline || [];
+      const canPay    = b.payment_status !== 'paid' && b.order_status !== 'cancelled';
+      const canCancel = !['dispatched','delivered','cancelled'].includes(b.order_status);
+
+      container.innerHTML = `
+        <div class="detail-card">
+          <h3>Order #${b.id}</h3>
+          <div class="detail-row"><span class="dl">Status</span><span class="dv"><span class="tag tag-${b.order_status}">${b.order_status}</span></span></div>
+          <div class="detail-row"><span class="dl">Payment</span><span class="dv"><span class="tag tag-${b.payment_status}">${b.payment_status}</span></span></div>
+          <div class="detail-row"><span class="dl">Farm</span><span class="dv">${escHtml(b.farm_name || '—')}</span></div>
+          <div class="detail-row"><span class="dl">Bird Type</span><span class="dv">${capitalize(b.bird_type || '—')}</span></div>
+          <div class="detail-row"><span class="dl">Quantity</span><span class="dv">${b.quantity_crates} crate(s) (${parseInt(b.quantity_crates)*30} eggs)</span></div>
+          <div class="detail-row"><span class="dl">Price/Crate</span><span class="dv">${fmt(b.unit_price)}</span></div>
+          <div class="detail-row"><span class="dl">Total</span><span class="dv">${fmt(b.total_amount)}</span></div>
+          <div class="detail-row"><span class="dl">Delivery To</span><span class="dv" style="max-width:200px;text-align:right">${escHtml(b.delivery_address)}</span></div>
+          ${b.delivery_date ? `<div class="detail-row"><span class="dl">Delivery Date</span><span class="dv">${b.delivery_date}</span></div>` : ''}
+          ${b.notes ? `<div class="detail-row"><span class="dl">Notes</span><span class="dv">${escHtml(b.notes)}</span></div>` : ''}
+          <div class="detail-row"><span class="dl">Placed</span><span class="dv">${b.created_at}</span></div>
+          <div class="action-row">
+            ${canPay    ? `<button class="btn-pay" onclick="initiatePayment(${b.id}, ${b.total_amount})">Pay Now — ${fmt(b.total_amount)}</button>` : ''}
+            ${canCancel ? `<button class="btn-cancel" onclick="cancelBooking(${b.id})">Cancel Order</button>` : ''}
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Order Tracking</h3>
+          ${timeline.length === 0
+            ? '<p style="color:var(--muted);font-size:.9rem">No tracking updates yet.</p>'
+            : `<ul class="timeline">${timeline.map(t => `
+                <li>
+                  <div class="tl-status">${t.status}</div>
+                  ${t.note ? `<div class="tl-note">${escHtml(t.note)}</div>` : ''}
+                  <div class="tl-date">${t.created_at}</div>
+                </li>`).join('')}</ul>`
+          }
+        </div>`;
+    } catch {
+      container.innerHTML = '<p style="color:var(--muted)">Could not load order detail.</p>';
+    }
+  }
+
+  // ── PAYMENT METHOD SELECTION ───────────────────────────────────────────
+  function initiatePayment(bookingId, totalAmount) {
+    document.getElementById('pay-modal-amount').textContent = fmt(totalAmount || 0);
+    document.getElementById('pay-bank-transfer-form').style.display = 'none';
+    document.getElementById('pay-method-err').style.display = 'none';
+    document.getElementById('bt-ref').value = '';
+    document.getElementById('bt-bank').value = '';
+    document.getElementById('bt-date').value = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('.pay-option').forEach(el => el.classList.remove('selected'));
+    openModal('payModal');
+    window._payBookingId = bookingId;
+  }
+
+  function selectPayMethod(method) {
+    document.querySelectorAll('.pay-option').forEach(el => el.classList.remove('selected'));
+    document.querySelector('.pay-option[data-method="' + method + '"]').classList.add('selected');
+    window._selectedPayMethod = method;
+    document.getElementById('pay-bank-transfer-form').style.display =
+      method === 'bank_transfer' ? 'block' : 'none';
+  }
+
+  async function confirmPayment() {
+    const method    = window._selectedPayMethod;
+    const bookingId = window._payBookingId;
+    const errEl     = document.getElementById('pay-method-err');
+    errEl.style.display = 'none';
+
+    if (!method) { errEl.textContent = 'Please select a payment method.'; errEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('pay-confirm-btn');
+    btn.disabled = true; btn.textContent = 'Please wait…';
+
+    try {
+      // ── Online gateways (Paystack / Flutterwave) ──────────────────────────
+      if (method === 'paystack' || method === 'flutterwave') {
+        const fd = new FormData();
+        fd.append('booking_id',     bookingId);
+        fd.append('payment_method', method);
+        const res = await apiPost('/buyer/payment/initiate_payment.php', fd);
+        if (res.status && res.data && res.data.payment_url) {
+          toast('Redirecting to payment gateway…', 'success');
+          setTimeout(() => { window.location.href = res.data.payment_url; }, 800);
+        } else {
+          errEl.textContent = res.text || 'Could not initialize payment.'; errEl.style.display = 'block';
+          btn.disabled = false; btn.textContent = 'Proceed';
+        }
+        return;
+      }
+
+      // ── Bank Transfer ─────────────────────────────────────────────────────
+      if (method === 'bank_transfer') {
+        const transferRef  = document.getElementById('bt-ref').value.trim();
+        const transferBank = document.getElementById('bt-bank').value.trim();
+        const transferDate = document.getElementById('bt-date').value;
+        if (!transferRef)  { errEl.textContent = 'Please enter your transfer reference.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Proceed'; return; }
+        if (!transferBank) { errEl.textContent = 'Please enter your bank name.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Proceed'; return; }
+        const fd = new FormData();
+        fd.append('booking_id',         bookingId);
+        fd.append('transfer_reference', transferRef);
+        fd.append('transfer_bank',      transferBank);
+        fd.append('transfer_date',      transferDate);
+        const res = await apiPost('/buyer/payment/bank_transfer.php', fd);
+        if (res.status) {
+          closeModal('payModal');
+          toast('Transfer details submitted! We\'ll confirm within 1–2 hours.', 'success');
+          openBookingDetail(bookingId);
+        } else {
+          errEl.textContent = res.text || 'Submission failed.'; errEl.style.display = 'block';
+        }
+        btn.disabled = false; btn.textContent = 'Proceed';
+        return;
+      }
+
+      // ── Cash on Delivery ──────────────────────────────────────────────────
+      if (method === 'cod') {
+        const fd = new FormData();
+        fd.append('booking_id', bookingId);
+        const res = await apiPost('/buyer/payment/cod_payment.php', fd);
+        if (res.status) {
+          closeModal('payModal');
+          toast('Cash on delivery selected. Pay when your order arrives!', 'success');
+          openBookingDetail(bookingId);
+        } else {
+          errEl.textContent = res.text || 'Could not select COD.'; errEl.style.display = 'block';
+          btn.disabled = false; btn.textContent = 'Proceed';
+        }
+        return;
+      }
+
+    } catch {
+      errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Proceed';
+    }
+  }
+
+  // ── CANCEL BOOKING ─────────────────────────────────────────────────────
+  async function cancelBooking(bookingId) {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    const fd = new FormData();
+    fd.append('booking_id', bookingId);
+    try {
+      const res = await apiPost('/buyer/booking/cancel_booking.php', fd);
+      if (res.status) {
+        toast('Order cancelled.', 'success');
+        openBookingDetail(bookingId);
+      } else {
+        toast(res.text || 'Could not cancel order.', 'error');
+      }
+    } catch {
+      toast('Network error.', 'error');
+    }
+  }
+
+  // ── LOGIN ──────────────────────────────────────────────────────────────
+  async function handleLogin(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('login-error');
+    const btn   = document.getElementById('login-btn');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Logging in…';
+
+    const fd = new FormData();
+    fd.append('email',    document.getElementById('login-email').value.trim());
+    fd.append('password', document.getElementById('login-password').value);
+
+    try {
+      const res = await apiPost('/buyer/auth/login.php', fd);
+      if (res.status) {
+        saveAuth(res.data);
+        closeModal('loginModal');
+        toast('Welcome back, ' + (res.data.name || 'buyer') + '!', 'success');
+      } else {
+        errEl.textContent   = res.text || 'Invalid credentials.';
+        errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Network error.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Log In';
+    }
+  }
+
+  // ── REGISTER ────────────────────────────────────────────────────────────
+  async function handleRegister(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('reg-error');
+    const btn   = document.getElementById('reg-btn');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Creating account…';
+
+    const fd = new FormData();
+    fd.append('name',     document.getElementById('reg-name').value.trim());
+    fd.append('phone',    document.getElementById('reg-phone').value.trim());
+    fd.append('email',    document.getElementById('reg-email').value.trim());
+    fd.append('password', document.getElementById('reg-password').value);
+    const addr = document.getElementById('reg-address').value.trim();
+    if (addr) fd.append('address', addr);
+
+    try {
+      const res = await apiPost('/buyer/auth/register.php', fd);
+      if (res.status) {
+        saveAuth(res.data);
+        closeModal('registerModal');
+        toast('Account created! Welcome, ' + (res.data.name || 'buyer') + '!', 'success');
+      } else {
+        errEl.textContent   = res.text || 'Registration failed.';
+        errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Network error.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create Account';
+    }
+  }
+
+  // ── PROFILE ────────────────────────────────────────────────────────────────
+  async function loadProfile() {
+    if (!auth) { showView('home'); openModal('loginModal'); return; }
+    document.getElementById('profile-spinner').style.display  = 'block';
+    document.getElementById('profile-display').style.display  = 'none';
+    document.getElementById('profile-edit-card').style.display = 'none';
+
+    // Populate from stored auth (no dedicated GET-profile endpoint needed)
+    document.getElementById('pi-name').textContent    = auth.name    || '—';
+    document.getElementById('pi-phone').textContent   = auth.phone   || '—';
+    document.getElementById('pi-email').textContent   = auth.email   || '—';
+    document.getElementById('pi-address').textContent = auth.address || '—';
+    document.getElementById('pi-since').textContent   = auth.created_at ? auth.created_at.split(' ')[0] : '—';
+
+    // Pre-fill edit form
+    document.getElementById('edit-name').value    = auth.name    || '';
+    document.getElementById('edit-phone').value   = auth.phone   || '';
+    document.getElementById('edit-address').value = auth.address || '';
+    document.getElementById('edit-password').value         = '';
+    document.getElementById('edit-password-confirm').value = '';
+
+    document.getElementById('profile-spinner').style.display = 'none';
+    document.getElementById('profile-display').style.display = 'block';
+  }
+
+  function toggleEditForm(show) {
+    document.getElementById('profile-display').style.display  = show ? 'none' : 'block';
+    document.getElementById('profile-edit-card').style.display = show ? 'block' : 'none';
+    document.getElementById('profile-error').style.display    = 'none';
+  }
+
+  async function handleUpdateProfile(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('profile-error');
+    const btn   = document.getElementById('profile-save-btn');
+    errEl.style.display = 'none';
+
+    const name    = document.getElementById('edit-name').value.trim();
+    const phone   = document.getElementById('edit-phone').value.trim();
+    const address = document.getElementById('edit-address').value.trim();
+    const pass    = document.getElementById('edit-password').value;
+    const passC   = document.getElementById('edit-password-confirm').value;
+
+    if (!name)  { errEl.textContent = 'Name is required.'; errEl.style.display = 'block'; return; }
+    if (!phone) { errEl.textContent = 'Phone is required.'; errEl.style.display = 'block'; return; }
+    if (pass && pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = 'block'; return; }
+    if (pass && pass !== passC)  { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    const fd = new FormData();
+    fd.append('name',    name);
+    fd.append('phone',   phone);
+    fd.append('address', address);
+    if (pass) fd.append('password', pass);
+
+    try {
+      const res = await apiPost('/buyer/profile/update_profile.php', fd);
+      if (res.status) {
+        // Update local auth cache with new values
+        auth.name    = name;
+        auth.phone   = phone;
+        auth.address = address;
+        saveAuth(auth);
+        toggleEditForm(false);
+        loadProfile();
+        toast('Profile updated successfully.', 'success');
+      } else {
+        errEl.textContent   = res.text || 'Update failed.';
+        errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Changes';
+    }
+  }
+
+  // ── UTILS ────────────────────────────────────────────────────────────────
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
+  function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  // ── INIT — hash routing ───────────────────────────────────────────────────
+  updateNavUI();
+  const validViews = ['home', 'bookings', 'profile'];
+  const startHash  = window.location.hash.replace('#', '');
+  if (validViews.includes(startHash)) {
+    showView(startHash);
+  } else {
+    showView('home');
+  }
+</script>
+</body>
+</html>

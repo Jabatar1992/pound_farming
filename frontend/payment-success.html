@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment — Oloyin-Fresh Eggs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:   #2d6a4f;
+      --green-lt:#52b788;
+      --orange:  #f77f00;
+      --text:    #1a1a2e;
+      --muted:   #6c757d;
+      --bg:      #f4f6f3;
+      --card:    #ffffff;
+      --radius:  14px;
+      --shadow:  0 4px 24px rgba(0,0,0,.1);
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .card {
+      background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 2.5rem 2rem; max-width: 440px; width: 100%; text-align: center;
+    }
+    .icon { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: .5rem; }
+    p  { color: var(--muted); font-size: .95rem; line-height: 1.6; margin-bottom: 1rem; }
+    .spinner {
+      width: 48px; height: 48px; border: 4px solid #dee2e6;
+      border-top-color: var(--green); border-radius: 50%;
+      animation: spin .8s linear infinite; margin: 0 auto 1.25rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .detail-box {
+      background: #f0faf4; border-radius: 10px; padding: 1rem; margin: 1rem 0;
+      text-align: left; font-size: .88rem;
+    }
+    .detail-box p { color: var(--text); margin-bottom: .35rem; }
+    .detail-box p:last-child { margin: 0; }
+    .detail-box strong { color: var(--green); }
+    .btn {
+      display: inline-block; margin-top: 1.25rem; padding: .75rem 2rem;
+      border-radius: 10px; font-size: .95rem; font-weight: 700; cursor: pointer;
+      border: none; text-decoration: none; transition: background .2s;
+    }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: #1f5038; }
+    .btn-secondary { background: #fff; color: var(--green); border: 1.5px solid var(--green); margin-left: .5rem; }
+    .btn-secondary:hover { background: #e9f7ef; }
+    .error-box { color: #842029; background: #f8d7da; border-radius: 8px; padding: .75rem 1rem; margin: 1rem 0; font-size: .88rem; }
+    .brand {
+      margin-bottom: 2rem; display:flex; align-items:center; justify-content:center; gap:.55rem;
+    }
+    .brand .b-icon { font-size:2rem; filter:drop-shadow(0 2px 5px rgba(45,106,79,.3)); }
+    .brand .b-text { display:flex; flex-direction:column; line-height:1.1; }
+    .brand .b-main {
+      font-family:'Poppins',sans-serif; font-size:1.25rem; font-weight:900;
+      letter-spacing:.04em; text-transform:uppercase;
+      background:linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .brand .b-main em { font-style:normal; -webkit-text-fill-color:var(--orange); color:var(--orange); }
+    .brand .b-sub {
+      font-size:.6rem; font-weight:600; letter-spacing:.2em;
+      text-transform:uppercase; color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="brand">
+    <span class="b-icon">🥚</span>
+    <span class="b-text">
+      <span class="b-main">Oloyin<em>-Fresh</em></span>
+      <span class="b-sub">Farm Fresh Eggs</span>
+    </span>
+  </div>
+
+  <div class="card" id="card-verifying">
+    <div class="spinner"></div>
+    <h1>Verifying Payment</h1>
+    <p>Please wait while we confirm your payment with Paystack. Do not close this page.</p>
+  </div>
+
+  <div class="card" id="card-success" style="display:none">
+    <div class="icon">✅</div>
+    <h1>Payment Successful!</h1>
+    <p>Your order has been confirmed. We'll get it ready for delivery soon.</p>
+    <div class="detail-box" id="success-details"></div>
+    <div>
+      <a href="index.html#home" class="btn btn-primary">Browse More Eggs</a>
+      <a href="index.html#bookings" class="btn btn-secondary" id="btn-view-orders">My Orders</a>
+    </div>
+  </div>
+
+  <div class="card" id="card-error" style="display:none">
+    <div class="icon">❌</div>
+    <h1>Payment Issue</h1>
+    <div class="error-box" id="error-msg"></div>
+    <p>If money was deducted from your account, please contact support with your reference below.</p>
+    <div class="detail-box" id="error-ref"></div>
+    <div>
+      <a href="index.html" class="btn btn-primary">Go Home</a>
+    </div>
+  </div>
+
+<script>
+  const API = 'https://jabman.online/pound_farming/API';
+
+  function qs(param) {
+    return new URLSearchParams(window.location.search).get(param);
+  }
+
+  function fmt(n) {
+    return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+  }
+
+  async function verifyPayment() {
+    const gateway   = qs('gateway') || '';
+    const bookingId = qs('booking_id');
+
+    // ── Flutterwave callback params ──────────────────────────────────────────
+    const flwStatus        = qs('status');
+    const flwTxRef         = qs('tx_ref');
+    const flwTransactionId = qs('transaction_id');
+
+    // ── Paystack callback params ─────────────────────────────────────────────
+    const reference = qs('ref') || qs('reference') || qs('trxref');
+
+    const isFlutterwave = gateway === 'flutterwave' || !!flwTransactionId;
+
+    if (isFlutterwave) {
+      if (flwStatus !== 'successful') {
+        showError('Payment was not completed. Status: ' + (flwStatus || 'unknown'), flwTxRef, bookingId);
+        return;
+      }
+      if (!flwTransactionId) {
+        showError('No transaction ID returned from Flutterwave.', flwTxRef, bookingId);
+        return;
+      }
+      try {
+        const fd = new FormData();
+        fd.append('gateway',        'flutterwave');
+        fd.append('transaction_id', flwTransactionId);
+        fd.append('tx_ref',         flwTxRef || '');
+
+        const res  = await fetch(API + '/buyer/payment/verify_payment.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.status) { showSuccess(data.data, flwTxRef); }
+        else { showError(data.text || 'Flutterwave verification failed.', flwTxRef, bookingId); }
+      } catch (e) {
+        showError('Network error while verifying payment.', flwTxRef, bookingId);
+      }
+
+    } else {
+      // Paystack
+      if (!reference) {
+        showError('No payment reference found in the URL. Please contact support.', '', bookingId);
+        return;
+      }
+      try {
+        const fd = new FormData();
+        fd.append('gateway',   'paystack');
+        fd.append('reference', reference);
+
+        const res  = await fetch(API + '/buyer/payment/verify_payment.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.status) { showSuccess(data.data, reference); }
+        else { showError(data.text || 'Payment verification failed.', reference, bookingId); }
+      } catch (e) {
+        showError('Network error while verifying payment. Reference: ' + reference, reference, bookingId);
+      }
+    }
+  }
+
+  function showSuccess(booking, ref) {
+    document.getElementById('card-verifying').style.display = 'none';
+    document.getElementById('card-success').style.display   = 'block';
+
+    const d = document.getElementById('success-details');
+    if (booking) {
+      d.innerHTML = `
+        <p><strong>Order #:</strong> ${booking.id || '—'}</p>
+        <p><strong>Quantity:</strong> ${booking.quantity_crates} crate(s) (${parseInt(booking.quantity_crates || 0) * 30} eggs)</p>
+        <p><strong>Total Paid:</strong> ${fmt(booking.total_amount || 0)}</p>
+        <p><strong>Delivery To:</strong> ${escHtml(booking.delivery_address || '—')}</p>
+        ${booking.delivery_date ? `<p><strong>Expected Date:</strong> ${booking.delivery_date}</p>` : ''}
+        <p><strong>Status:</strong> ${booking.order_status || 'confirmed'}</p>
+        <p><strong>Reference:</strong> ${escHtml(ref)}</p>`;
+    } else {
+      d.innerHTML = `<p><strong>Reference:</strong> ${escHtml(ref)}</p>`;
+    }
+
+    // Store auth and update view bookings link
+    const auth = JSON.parse(localStorage.getItem('pf_auth') || 'null');
+    if (!auth) {
+      document.getElementById('btn-view-orders').style.display = 'none';
+    }
+  }
+
+  function showError(msg, ref, bookingId) {
+    document.getElementById('card-verifying').style.display = 'none';
+    document.getElementById('card-error').style.display     = 'block';
+    document.getElementById('error-msg').textContent        = msg;
+    const refEl = document.getElementById('error-ref');
+    if (ref || bookingId) {
+      refEl.innerHTML = `
+        ${ref      ? `<p><strong>Reference:</strong> ${escHtml(ref)}</p>` : ''}
+        ${bookingId ? `<p><strong>Booking ID:</strong> ${escHtml(bookingId)}</p>` : ''}`;
+    } else {
+      refEl.style.display = 'none';
+    }
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Run on load
+  verifyPayment();
+</script>
+</body>
+</html>

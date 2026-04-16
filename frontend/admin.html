@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oloyin-Fresh Eggs — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:    #1b4332;
+      --green-md: #2d6a4f;
+      --green-lt: #52b788;
+      --green-bg: #d8f3dc;
+      --orange:   #f77f00;
+      --red:      #c0392b;
+      --red-lt:   #f8d7da;
+      --text:     #1a1a2e;
+      --muted:    #6c757d;
+      --bg:       #f0f2f0;
+      --card:     #ffffff;
+      --border:   #dee2e6;
+      --sidebar-w:230px;
+      --radius:   10px;
+      --shadow:   0 2px 10px rgba(0,0,0,.08);
+    }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); }
+
+    /* ── LOGIN ───────────────────────────────── */
+    #login-screen {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,var(--green) 0%,var(--green-md) 100%); padding:1rem;
+    }
+    .login-card {
+      background:var(--card); border-radius:16px; padding:2.5rem 2rem;
+      width:100%; max-width:400px; box-shadow:0 8px 32px rgba(0,0,0,.2);
+    }
+    .login-brand { text-align:center; margin-bottom:1.75rem; }
+    .login-brand .brand-icon { font-size:3.2rem; display:block; margin-bottom:.5rem; filter:drop-shadow(0 2px 6px rgba(45,106,79,.3)); }
+    .login-brand .brand-name {
+      font-family:'Poppins',sans-serif; font-size:1.7rem; font-weight:900;
+      letter-spacing:.03em; text-transform:uppercase;
+      background:linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      line-height:1.1; display:block;
+    }
+    .login-brand .brand-name em { font-style:normal; -webkit-text-fill-color:var(--orange); color:var(--orange); }
+    .login-brand .brand-tag {
+      font-family:'Poppins',sans-serif; font-size:.72rem; font-weight:600;
+      letter-spacing:.22em; text-transform:uppercase; color:var(--muted);
+      margin-top:.35rem; display:block;
+    }
+    .login-brand p  { color:var(--muted); font-size:.88rem; margin-top:.5rem; }
+
+    /* ── LAYOUT ──────────────────────────────── */
+    #app { display:none; min-height:100vh; }
+    #sidebar {
+      position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+      background:var(--green); color:#fff; display:flex; flex-direction:column;
+      z-index:50; transition:transform .25s;
+    }
+    .sidebar-brand {
+      padding:1.25rem 1.1rem;
+      border-bottom:1px solid rgba(255,255,255,.12);
+      display:flex; align-items:center; gap:.55rem;
+    }
+    .sidebar-brand .sb-icon { font-size:1.5rem; filter:drop-shadow(0 1px 3px rgba(0,0,0,.3)); }
+    .sidebar-brand .sb-text { display:flex; flex-direction:column; line-height:1.1; }
+    .sidebar-brand .sb-main {
+      font-family:'Poppins',sans-serif; font-size:1rem; font-weight:900;
+      letter-spacing:.04em; text-transform:uppercase; color:#fff;
+    }
+    .sidebar-brand .sb-main em { font-style:normal; color:var(--orange); }
+    .sidebar-brand .sb-sub {
+      font-size:.6rem; font-weight:600; letter-spacing:.16em;
+      text-transform:uppercase; color:rgba(255,255,255,.55); margin-top:1px;
+    }
+    .sidebar-admin { padding:.75rem 1.1rem .5rem; font-size:.78rem; opacity:.6; text-transform:uppercase; letter-spacing:.06em; }
+    nav a {
+      display:flex; align-items:center; gap:.65rem; padding:.65rem 1.1rem;
+      color:rgba(255,255,255,.8); text-decoration:none; font-size:.9rem; cursor:pointer;
+      border-left:3px solid transparent; transition:background .15s,color .15s,border-color .15s;
+    }
+    nav a:hover   { background:rgba(255,255,255,.08); color:#fff; }
+    nav a.active  { background:rgba(255,255,255,.12); color:#fff; border-left-color:var(--green-lt); font-weight:600; }
+    nav a .ico    { font-size:1rem; width:18px; text-align:center; }
+    .sidebar-footer {
+      margin-top:auto; padding:1rem 1.1rem; border-top:1px solid rgba(255,255,255,.1);
+    }
+    .btn-logout {
+      width:100%; background:rgba(255,255,255,.1); color:#fff; border:none; border-radius:8px;
+      padding:.55rem; font-size:.88rem; cursor:pointer; transition:background .2s;
+    }
+    .btn-logout:hover { background:rgba(255,255,255,.2); }
+
+    #main {
+      margin-left:var(--sidebar-w); display:flex; flex-direction:column; min-height:100vh;
+    }
+    #topbar {
+      background:var(--card); border-bottom:1px solid var(--border); padding:.75rem 1.5rem;
+      display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:40;
+    }
+    #topbar h2 { font-size:1.15rem; font-weight:700; color:var(--green-md); }
+    .topbar-right { display:flex; align-items:center; gap:.75rem; font-size:.88rem; color:var(--muted); }
+    #menu-toggle { display:none; background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text); }
+
+    #content { padding:1.5rem; flex:1; }
+
+    /* ── SECTION ─────────────────────────────── */
+    .section { display:none; }
+    .section.active { display:block; }
+    .sec-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem; }
+    .sec-header h3 { font-size:1.1rem; font-weight:700; color:var(--green-md); }
+
+    /* ── STAT CARDS ──────────────────────────── */
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1rem; margin-bottom:1.75rem; }
+    .stat-card {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:1.1rem 1.25rem; display:flex; flex-direction:column; gap:.4rem;
+    }
+    .stat-card .sc-label { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .stat-card .sc-value { font-size:1.75rem; font-weight:800; color:var(--green-md); }
+    .stat-card .sc-sub   { font-size:.8rem; color:var(--muted); }
+    .stat-card.orange .sc-value { color:var(--orange); }
+    .stat-card.red    .sc-value { color:var(--red); }
+
+    /* ── TABLES ──────────────────────────────── */
+    .table-wrap { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    thead th { background:var(--bg); padding:.65rem 1rem; text-align:left; font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+    tbody td { padding:.65rem 1rem; border-top:1px solid var(--border); vertical-align:middle; }
+    tbody tr:hover { background:#f9fafb; }
+    .tbl-actions { display:flex; gap:.4rem; }
+
+    /* ── BUTTONS ─────────────────────────────── */
+    .btn { border:none; border-radius:7px; padding:.45rem .9rem; font-size:.85rem; font-weight:600; cursor:pointer; transition:opacity .15s; }
+    .btn:hover { opacity:.87; }
+    .btn-green  { background:var(--green-md); color:#fff; }
+    .btn-orange { background:var(--orange);   color:#fff; }
+    .btn-red    { background:var(--red);      color:#fff; }
+    .btn-ghost  { background:var(--bg); color:var(--text); border:1px solid var(--border); }
+    .btn-sm { padding:.3rem .65rem; font-size:.78rem; }
+
+    /* ── STATUS BADGES ───────────────────────── */
+    .badge { padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:700; white-space:nowrap; }
+    .badge-pending    { background:#fff3cd; color:#856404; }
+    .badge-confirmed  { background:#cfe2ff; color:#084298; }
+    .badge-paid       { background:#d1e7dd; color:#0a3622; }
+    .badge-dispatched { background:#e2d9f3; color:#432874; }
+    .badge-delivered  { background:var(--green-bg); color:var(--green-md); }
+    .badge-cancelled  { background:var(--red-lt);   color:var(--red); }
+    .badge-active     { background:#d1e7dd; color:#0a3622; }
+    .badge-inactive   { background:#e9ecef; color:#495057; }
+    .badge-unpaid     { background:#fff3cd; color:#856404; }
+
+    /* ── FILTER BAR ──────────────────────────── */
+    .filter-bar { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center; }
+    .filter-bar select, .filter-bar input {
+      padding:.4rem .75rem; border:1.5px solid var(--border); border-radius:7px;
+      font-size:.85rem; font-family:inherit; background:#fff; color:var(--text);
+    }
+
+    /* ── MODAL ───────────────────────────────── */
+    #modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+      z-index:200; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto;
+    }
+    #modal-overlay.open { display:flex; }
+    #modal {
+      background:var(--card); border-radius:var(--radius); box-shadow:0 8px 32px rgba(0,0,0,.15);
+      padding:1.75rem; width:100%; max-width:520px; margin:auto; animation:slideUp .2s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    #modal h3 { font-size:1.1rem; font-weight:700; color:var(--green-md); margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; }
+    #modal h3 button { background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--muted); line-height:1; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+    .form-group { margin-bottom:.9rem; }
+    .form-group label { display:block; font-size:.8rem; font-weight:600; color:var(--muted); margin-bottom:.3rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:.55rem .8rem; border:1.5px solid var(--border); border-radius:7px;
+      font-size:.9rem; font-family:inherit; color:var(--text); background:#fff;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline:none; border-color:var(--green-lt);
+    }
+    .form-group textarea { resize:vertical; min-height:65px; }
+    .form-err { font-size:.82rem; color:var(--red); margin-top:.3rem; display:none; }
+    .modal-footer { display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
+
+    /* ── EMPTY / SPINNER ─────────────────────── */
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--green-md); border-radius:50%; animation:spin .8s linear infinite; margin:2rem auto; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .empty { text-align:center; padding:2.5rem; color:var(--muted); font-size:.9rem; }
+
+    /* ── TOAST ───────────────────────────────── */
+    #toast {
+      position:fixed; bottom:1.5rem; right:1.5rem; z-index:999; display:none;
+      background:var(--text); color:#fff; padding:.75rem 1.25rem; border-radius:9px;
+      font-size:.88rem; max-width:320px; box-shadow:0 4px 20px rgba(0,0,0,.15);
+    }
+    @media(max-width:768px) {
+      #toast { bottom:5rem; left:1rem; right:1rem; max-width:100%; text-align:center; }
+    }
+    #toast.ok  { background:var(--green-md); }
+    #toast.err { background:var(--red); }
+
+    /* ── FORM FIELD ──────────────────────────── */
+    .full { grid-column:1/-1; }
+
+    /* ── TOUCH FIX — remove 300ms delay on all tappable elements ── */
+    a, button, .btn, nav a, [onclick] {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Ensure minimum 44px touch targets on mobile */
+    @media(max-width:768px) {
+      .btn { min-height:38px; }
+      nav a { padding:.8rem 1.1rem; }
+      .btn-sm { padding:.45rem .75rem; font-size:.82rem; min-height:36px; }
+    }
+
+    /* ── SIDEBAR BACKDROP ───────────────────── */
+    #sidebar-backdrop {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+      z-index:49;
+    }
+    #sidebar-backdrop.show { display:block; }
+
+    /* ── RESPONSIVE ──────────────────────────── */
+    @media(max-width:768px) {
+      #sidebar { transform:translateX(-100%); }
+      #sidebar.open { transform:translateX(0); }
+      #main { margin-left:0; }
+      #menu-toggle { display:block; }
+      .form-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="brand-icon">🥚</span>
+      <span class="brand-name">Oloyin<em>-Fresh</em></span>
+      <span class="brand-tag">Eggs &bull; Admin Portal</span>
+    </div>
+    <form onsubmit="handleAdminLogin(event)">
+      <div class="form-group">
+        <label>Admin ID</label>
+        <input type="text" id="l-adminid" placeholder="Enter your Admin ID" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="l-password" placeholder="••••••••" required />
+      </div>
+      <p id="l-err" class="form-err"></p>
+      <button type="submit" class="btn btn-green" id="l-btn" style="width:100%;padding:.7rem;font-size:1rem;margin-top:.25rem">Log In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="sidebar-backdrop" onclick="closeSidebar()"></div>
+<div id="app">
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <span class="sb-icon">🥚</span>
+      <span class="sb-text">
+        <span class="sb-main">Oloyin<em>-Fresh</em></span>
+        <span class="sb-sub">Farm Fresh Eggs</span>
+      </span>
+    </div>
+    <div class="sidebar-admin" id="sb-admin-name">Admin</div>
+    <nav>
+      <a href="javascript:void(0)" onclick="goTo('dashboard')"      class="active" data-sec="dashboard">    <span class="ico">📊</span> Dashboard</a>
+      <a href="javascript:void(0)" onclick="goTo('orders')"         data-sec="orders">                       <span class="ico">📦</span> Orders</a>
+      <a href="javascript:void(0)" onclick="goTo('listings')"       data-sec="listings">                     <span class="ico">🥚</span> Egg Listings</a>
+      <a href="javascript:void(0)" onclick="goTo('farms')"          data-sec="farms">                        <span class="ico">🏠</span> Farms</a>
+      <a href="javascript:void(0)" onclick="goTo('flocks')"         data-sec="flocks">                       <span class="ico">🐔</span> Flocks</a>
+      <a href="javascript:void(0)" onclick="goTo('workers')"        data-sec="workers">                      <span class="ico">👷</span> Workers</a>
+      <a href="javascript:void(0)" onclick="goTo('feed')"           data-sec="feed">                         <span class="ico">🌾</span> Feed Inventory</a>
+      <a href="javascript:void(0)" onclick="goTo('feed-log')"       data-sec="feed-log">                     <span class="ico">📋</span> Feed Consumption</a>
+      <a href="javascript:void(0)" onclick="goTo('egg-prod')"       data-sec="egg-prod">                     <span class="ico">🗃️</span> Egg Production</a>
+      <a href="javascript:void(0)" onclick="goTo('health')"         data-sec="health">                       <span class="ico">💉</span> Health Records</a>
+      <a href="javascript:void(0)" onclick="goTo('mortality')"      data-sec="mortality">                    <span class="ico">📉</span> Mortality</a>
+      <a href="javascript:void(0)" onclick="goTo('expenses')"       data-sec="expenses">                     <span class="ico">💸</span> Expenses</a>
+      <a href="javascript:void(0)" onclick="goTo('sales')"          data-sec="sales">                        <span class="ico">🧾</span> Sales</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="adminLogout()">Log Out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="topbar">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <h2 id="page-title">Dashboard</h2>
+      </div>
+      <div class="topbar-right">
+        <span id="top-admin-name"></span>
+        <span style="font-size:.78rem;color:var(--muted)" id="top-date"></span>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="sec-dashboard" class="section active">
+        <div class="stats-grid" id="dash-stats"><div class="spinner"></div></div>
+        <div class="sec-header"><h3>Recent Orders</h3></div>
+        <div class="table-wrap" id="dash-orders"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── ORDERS ── -->
+      <div id="sec-orders" class="section">
+        <div class="sec-header">
+          <h3>Egg Bookings</h3>
+        </div>
+        <div class="filter-bar">
+          <select id="order-filter" onchange="loadOrders()">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="paid">Paid</option>
+            <option value="dispatched">Dispatched</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="table-wrap" id="orders-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── EGG LISTINGS ── -->
+      <div id="sec-listings" class="section">
+        <div class="sec-header">
+          <h3>Egg Availability</h3>
+          <button class="btn btn-green" onclick="openAddListing()">+ Add Listing</button>
+        </div>
+        <div class="table-wrap" id="listings-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── FARMS ── -->
+      <div id="sec-farms" class="section">
+        <div class="sec-header">
+          <h3>Farms / Pens</h3>
+          <button class="btn btn-green" onclick="openAddFarm()">+ Add Farm</button>
+        </div>
+        <div class="table-wrap" id="farms-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── FLOCKS ── -->
+      <div id="sec-flocks" class="section">
+        <div class="sec-header">
+          <h3>Flocks (Bird Batches)</h3>
+          <button class="btn btn-green" onclick="openAddFlock()">+ Add Flock</button>
+        </div>
+        <div class="table-wrap" id="flocks-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── WORKERS ── -->
+      <div id="sec-workers" class="section">
+        <div class="sec-header">
+          <h3>Workers</h3>
+          <button class="btn btn-green" onclick="openAddWorker()">+ Add Worker</button>
+        </div>
+        <div class="table-wrap" id="workers-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── FEED ── -->
+      <div id="sec-feed" class="section">
+        <div class="sec-header">
+          <h3>Feed Inventory</h3>
+          <button class="btn btn-green" onclick="openAddFeed()">+ Add Feed</button>
+        </div>
+        <div class="table-wrap" id="feed-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── FEED LOG ── -->
+      <div id="sec-feed-log" class="section">
+        <div class="sec-header">
+          <h3>Feed Consumption Log</h3>
+          <button class="btn btn-green" onclick="openLogFeed()">+ Log Consumption</button>
+        </div>
+        <div class="table-wrap" id="feed-log-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── EGG PRODUCTION ── -->
+      <div id="sec-egg-prod" class="section">
+        <div class="sec-header">
+          <h3>Egg Production Log</h3>
+          <button class="btn btn-green" onclick="openLogEgg()">+ Log Collection</button>
+        </div>
+        <div class="table-wrap" id="egg-prod-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── HEALTH ── -->
+      <div id="sec-health" class="section">
+        <div class="sec-header">
+          <h3>Health Records</h3>
+          <button class="btn btn-green" onclick="openAddHealth()">+ Add Record</button>
+        </div>
+        <div class="table-wrap" id="health-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── MORTALITY ── -->
+      <div id="sec-mortality" class="section">
+        <div class="sec-header">
+          <h3>Mortality Records</h3>
+          <button class="btn btn-green" onclick="openLogMortality()">+ Log Mortality</button>
+        </div>
+        <div class="table-wrap" id="mortality-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── EXPENSES ── -->
+      <div id="sec-expenses" class="section">
+        <div class="sec-header">
+          <h3>Expenses</h3>
+          <button class="btn btn-green" onclick="openAddExpense()">+ Add Expense</button>
+        </div>
+        <div class="table-wrap" id="expenses-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── SALES ── -->
+      <div id="sec-sales" class="section">
+        <div class="sec-header">
+          <h3>Sales (Offline)</h3>
+          <button class="btn btn-green" onclick="openAddSale()">+ Record Sale</button>
+        </div>
+        <div class="table-wrap" id="sales-tbl"><div class="spinner"></div></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════ MODAL ═══════════ -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div id="modal">
+    <h3 id="modal-title">Form <button onclick="closeModal()">×</button></h3>
+    <div id="modal-body"></div>
+    <p id="modal-err" class="form-err"></p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-green" id="modal-submit" onclick="modalSubmit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div id="toast"></div>
+
+<script>
+  const API  = 'https://jabman.online/pound_farming/API';
+  let adminAuth = JSON.parse(localStorage.getItem('pf_admin') || 'null');
+  let _modalAction = null;
+  let _cache = {};  // simple cache: flocks[], workers[], feeds[], farms[]
+
+  // ── INIT ────────────────────────────────────────────────────────────────
+  document.getElementById('top-date').textContent = new Date().toDateString();
+  if (adminAuth && adminAuth.access_token) {
+    showApp();
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('sb-admin-name').textContent  = adminAuth.name || 'Admin';
+    document.getElementById('top-admin-name').textContent = 'Hi, ' + (adminAuth.name || 'Admin');
+    goTo('dashboard');
+    prefetchDropdowns();
+  }
+
+  // ── AUTH ─────────────────────────────────────────────────────────────────
+  async function handleAdminLogin(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('l-err');
+    const btn   = document.getElementById('l-btn');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Logging in…';
+    const fd = new FormData();
+    fd.append('admin_id',  document.getElementById('l-adminid').value.trim());
+    fd.append('password',  document.getElementById('l-password').value);
+    try {
+      const res = await apiPost('/admin/auth/login.php', fd, false);
+      if (res.status) {
+        adminAuth = res.data;
+        localStorage.setItem('pf_admin', JSON.stringify(adminAuth));
+        showApp();
+      } else {
+        errEl.textContent = res.text || 'Invalid credentials.'; errEl.style.display = 'block';
+      }
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+    finally { btn.disabled = false; btn.textContent = 'Log In'; }
+  }
+
+  function adminLogout() {
+    adminAuth = null; localStorage.removeItem('pf_admin');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    toast('Logged out.');
+  }
+
+  // ── SIDEBAR TOGGLE ────────────────────────────────────────────────────────
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const bd = document.getElementById('sidebar-backdrop');
+    const isOpen = sb.classList.toggle('open');
+    bd.classList.toggle('show', isOpen);
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-backdrop').classList.remove('show');
+  }
+
+  // ── NAVIGATION ────────────────────────────────────────────────────────────
+  const titles = {
+    dashboard:'Dashboard', orders:'Orders', listings:'Egg Listings',
+    farms:'Farms', flocks:'Flocks', workers:'Workers', feed:'Feed Inventory',
+    'feed-log':'Feed Consumption', 'egg-prod':'Egg Production',
+    health:'Health Records', mortality:'Mortality', expenses:'Expenses', sales:'Sales'
+  };
+  function goTo(sec) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById('sec-' + sec).classList.add('active');
+    document.querySelector(`nav a[data-sec="${sec}"]`).classList.add('active');
+    document.getElementById('page-title').textContent = titles[sec] || sec;
+    closeSidebar();
+    loadSection(sec);
+  }
+
+  function loadSection(sec) {
+    const loaders = {
+      dashboard:  loadDashboard,
+      orders:     loadOrders,
+      listings:   loadListings,
+      farms:      loadFarms,
+      flocks:     loadFlocks,
+      workers:    loadWorkers,
+      feed:       loadFeed,
+      'feed-log': loadFeedLog,
+      'egg-prod': loadEggProd,
+      health:     loadHealth,
+      mortality:  loadMortality,
+      expenses:   loadExpenses,
+      sales:      loadSales,
+    };
+    if (loaders[sec]) loaders[sec]();
+  }
+
+  // ── API HELPERS ───────────────────────────────────────────────────────────
+  function fetchWithTimeout(url, opts, ms = 15000) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+  }
+  async function apiGet(path) {
+    const res = await fetchWithTimeout(API + path, { headers: { Authorization: 'Bearer ' + adminAuth.access_token } });
+    return res.json();
+  }
+  async function apiPost(path, fd, auth = true) {
+    const h = auth ? { Authorization: 'Bearer ' + adminAuth.access_token } : {};
+    const res = await fetchWithTimeout(API + path, { method: 'POST', headers: h, body: fd });
+    return res.json();
+  }
+
+  // ── PREFETCH DROPDOWNS ────────────────────────────────────────────────────
+  async function prefetchDropdowns() {
+    try {
+      const [f, fl, w, fd] = await Promise.all([
+        apiGet('/admin/farm/view_all_farms.php'),
+        apiGet('/admin/flock/view_all_flocks.php'),
+        apiGet('/admin/worker/view_all_workers.php'),
+        apiGet('/admin/feed/view_all_feeds.php'),
+      ]);
+      _cache.farms   = f.data  || [];
+      _cache.flocks  = fl.data || [];
+      _cache.workers = w.data  || [];
+      _cache.feeds   = fd.data || [];
+    } catch {}
+  }
+
+  function flockOpts(sel='') {
+    return (_cache.flocks||[]).map(f=>`<option value="${f.id}"${f.id==sel?' selected':''}>${escH(f.batch_number)} (${f.bird_type})</option>`).join('');
+  }
+  function farmOpts(sel='') {
+    return (_cache.farms||[]).map(f=>`<option value="${f.id}"${f.id==sel?' selected':''}>${escH(f.name)}</option>`).join('');
+  }
+  function workerOpts(sel='') {
+    return (_cache.workers||[]).map(w=>`<option value="${w.id}"${w.id==sel?' selected':''}>${escH(w.name)}</option>`).join('');
+  }
+  function feedOpts(sel='') {
+    return (_cache.feeds||[]).map(f=>`<option value="${f.id}"${f.id==sel?' selected':''}>${escH(f.name)} (${f.feed_type})</option>`).join('');
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────────────
+  let _tt;
+  function toast(msg, type='') {
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.className=type; el.style.display='block';
+    clearTimeout(_tt); _tt=setTimeout(()=>el.style.display='none',3500);
+  }
+
+  // ── MODAL ──────────────────────────────────────────────────────────────────
+  function openModal(title, bodyHtml, onSubmit) {
+    document.getElementById('modal-title').innerHTML = escH(title) + ' <button onclick="closeModal()">×</button>';
+    document.getElementById('modal-body').innerHTML  = bodyHtml;
+    document.getElementById('modal-err').style.display = 'none';
+    _modalAction = onSubmit;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); _modalAction = null; }
+  async function modalSubmit() {
+    if (!_modalAction) return;
+    const btn = document.getElementById('modal-submit');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    document.getElementById('modal-err').style.display = 'none';
+    try {
+      await _modalAction();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  }
+  function modalErr(msg) {
+    const el = document.getElementById('modal-err');
+    el.textContent = msg; el.style.display = 'block';
+  }
+  function fv(id) { return document.getElementById(id)?.value ?? ''; }
+
+  // ── UTILS ──────────────────────────────────────────────────────────────────
+  function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmt(n)  { return '₦' + Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2}); }
+  function cap(s)  { return s ? s.charAt(0).toUpperCase()+s.slice(1).replace(/_/g,' ') : '—'; }
+  function tbl(heads, rows) {
+    if (!rows || !rows.length) return '<div class="empty">No records found.</div>';
+    return `<table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  function badge(val) { return `<span class="badge badge-${val||'active'}">${cap(val)}</span>`; }
+  function spinner(el) { document.getElementById(el).innerHTML='<div class="spinner"></div>'; }
+
+  // ══════════════════════════════════════════════════════════════════
+  // DASHBOARD
+  // ══════════════════════════════════════════════════════════════════
+  async function loadDashboard() {
+    spinner('dash-stats'); spinner('dash-orders');
+    try {
+      const [farms,flocks,workers,orders,listings] = await Promise.all([
+        apiGet('/admin/farm/view_all_farms.php'),
+        apiGet('/admin/flock/view_all_flocks.php'),
+        apiGet('/admin/worker/view_all_workers.php'),
+        apiGet('/admin/booking/view_all_bookings.php'),
+        apiGet('/admin/availability/view_all_availability.php'),
+      ]);
+      const orderList  = orders.data  || [];
+      const pending    = orderList.filter(o=>o.order_status==='pending').length;
+      const dispatched = orderList.filter(o=>o.order_status==='dispatched').length;
+      const revenue    = orderList.filter(o=>o.payment_status==='paid').reduce((s,o)=>s+parseFloat(o.total_amount||0),0);
+
+      document.getElementById('dash-stats').innerHTML = `
+        <div class="stat-card"><span class="sc-label">Farms</span><span class="sc-value">${(farms.data||[]).length}</span></div>
+        <div class="stat-card"><span class="sc-label">Active Flocks</span><span class="sc-value">${(flocks.data||[]).filter(f=>f.status==='active').length}</span></div>
+        <div class="stat-card"><span class="sc-label">Workers</span><span class="sc-value">${(workers.data||[]).length}</span></div>
+        <div class="stat-card orange"><span class="sc-label">Pending Orders</span><span class="sc-value">${pending}</span></div>
+        <div class="stat-card"><span class="sc-label">Dispatched</span><span class="sc-value">${dispatched}</span></div>
+        <div class="stat-card"><span class="sc-label">Total Revenue</span><span class="sc-value" style="font-size:1.2rem">${fmt(revenue)}</span><span class="sc-sub">from paid orders</span></div>
+        <div class="stat-card"><span class="sc-label">Total Orders</span><span class="sc-value">${orderList.length}</span></div>
+        <div class="stat-card"><span class="sc-label">Listings Active</span><span class="sc-value">${(listings.data||[]).filter(l=>l.is_available==1).length}</span></div>`;
+
+      const recent = orderList.slice(0,10);
+      document.getElementById('dash-orders').innerHTML = tbl(
+        ['#','Buyer','Crates','Total','Status','Payment','Date'],
+        recent.map(o=>`<tr>
+          <td>#${o.id}</td>
+          <td>${escH(o.buyer_name)}<br><small style="color:var(--muted)">${escH(o.buyer_phone||'')}</small></td>
+          <td>${o.quantity_crates}</td>
+          <td>${fmt(o.total_amount)}</td>
+          <td>${badge(o.order_status)}</td>
+          <td>${badge(o.payment_status)}</td>
+          <td style="font-size:.78rem">${(o.created_at||'').split(' ')[0]}</td>
+        </tr>`).join('')
+      );
+    } catch(e){
+      document.getElementById('dash-stats').innerHTML='<p style="color:var(--muted)">Could not load stats.</p>';
+      document.getElementById('dash-orders').innerHTML='<div class="empty">Could not load recent orders.</div>';
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // ORDERS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadOrders() {
+    spinner('orders-tbl');
+    const status = document.getElementById('order-filter')?.value || '';
+    try {
+      const res = await apiGet('/admin/booking/view_all_bookings.php' + (status?'?status='+status:''));
+      const list = res.data || [];
+      document.getElementById('orders-tbl').innerHTML = tbl(
+        ['#','Buyer','Phone','Crates','Total','Delivery Addr','Status','Payment','Action'],
+        list.map(o=>`<tr>
+          <td>#${o.id}</td>
+          <td>${escH(o.buyer_name)}</td>
+          <td>${escH(o.buyer_phone||'')}</td>
+          <td>${o.quantity_crates}</td>
+          <td>${fmt(o.total_amount)}</td>
+          <td style="max-width:140px;font-size:.8rem">${escH(o.delivery_address||'')}</td>
+          <td>${badge(o.order_status)}</td>
+          <td>${badge(o.payment_status)}</td>
+          <td><button class="btn btn-sm btn-orange" onclick="openUpdateStatus(${o.id},'${o.order_status}')">Update</button></td>
+        </tr>`).join('')
+      );
+    } catch { document.getElementById('orders-tbl').innerHTML='<div class="empty">Could not load orders.</div>'; }
+  }
+
+  function openUpdateStatus(bookingId, current) {
+    openModal('Update Order #' + bookingId, `
+      <div class="form-group">
+        <label>New Status</label>
+        <select id="m-status">
+          ${['pending','confirmed','paid','dispatched','delivered','cancelled'].map(s=>`<option value="${s}"${s===current?' selected':''}>${cap(s)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Note (optional)</label>
+        <input type="text" id="m-note" placeholder="e.g. Driver: Emeka, truck ABC123" />
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('booking_id',   bookingId);
+      fd.append('order_status', fv('m-status'));
+      fd.append('note',         fv('m-note'));
+      const res = await apiPost('/admin/booking/update_booking_status.php', fd);
+      if (res.status) { closeModal(); toast('Status updated.','ok'); loadOrders(); }
+      else modalErr(res.text || 'Update failed.');
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // EGG LISTINGS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadListings() {
+    spinner('listings-tbl');
+    try {
+      const res = await apiGet('/admin/availability/view_all_availability.php');
+      const list = res.data || [];
+      document.getElementById('listings-tbl').innerHTML = tbl(
+        ['#','Flock / Batch','Crates','Price/Crate','Available','Created','Actions'],
+        list.map(l=>`<tr>
+          <td>${l.id}</td>
+          <td>${escH(l.batch_number||'')}</td>
+          <td>${l.available_crates}</td>
+          <td>${fmt(l.price_per_crate)}</td>
+          <td>${badge(l.is_available==1?'active':'inactive')}</td>
+          <td style="font-size:.78rem">${(l.created_at||'').split(' ')[0]}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditListing(${JSON.stringify(l)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteListing(${l.id})">Del</button>
+          </td>
+        </tr>`).join('')
+      );
+    } catch { document.getElementById('listings-tbl').innerHTML='<div class="empty">Could not load listings.</div>'; }
+  }
+
+  function listingForm(l={}) {
+    return `
+      <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts(l.flock_id)}</select></div>
+      <div class="form-row">
+        <div class="form-group"><label>Available Crates</label><input type="number" id="m-crates" min="1" value="${l.available_crates||''}" /></div>
+        <div class="form-group"><label>Price per Crate (₦)</label><input type="number" id="m-price" min="1" step="0.01" value="${l.price_per_crate||''}" /></div>
+      </div>
+      <div class="form-group"><label>Description (optional)</label><textarea id="m-desc">${escH(l.description||'')}</textarea></div>
+      <div class="form-group"><label>Status</label>
+        <select id="m-avail"><option value="1"${l.is_available==1?' selected':''}>Available</option><option value="0"${l.is_available==0?' selected':''}>Unavailable</option></select>
+      </div>`;
+  }
+
+  function openAddListing() {
+    openModal('Add Egg Listing', listingForm(), async () => {
+      const fd = new FormData();
+      fd.append('flock_id',        fv('m-flock'));
+      fd.append('available_crates',fv('m-crates'));
+      fd.append('price_per_crate', fv('m-price'));
+      fd.append('description',     fv('m-desc'));
+      fd.append('is_available',    fv('m-avail'));
+      const res = await apiPost('/admin/availability/add_availability.php', fd);
+      if (res.status) { closeModal(); toast('Listing added.','ok'); loadListings(); }
+      else modalErr(res.text);
+    });
+  }
+
+  function openEditListing(l) {
+    openModal('Edit Listing #'+l.id, listingForm(l), async () => {
+      const fd = new FormData();
+      fd.append('id',              l.id);
+      fd.append('flock_id',        fv('m-flock'));
+      fd.append('available_crates',fv('m-crates'));
+      fd.append('price_per_crate', fv('m-price'));
+      fd.append('description',     fv('m-desc'));
+      fd.append('is_available',    fv('m-avail'));
+      const res = await apiPost('/admin/availability/update_availability.php', fd);
+      if (res.status) { closeModal(); toast('Listing updated.','ok'); loadListings(); }
+      else modalErr(res.text);
+    });
+  }
+
+  async function deleteListing(id) {
+    if (!confirm('Delete this listing?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/availability/delete_availability.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadListings(); }
+    else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FARMS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadFarms() {
+    spinner('farms-tbl');
+    try {
+      const res = await apiGet('/admin/farm/view_all_farms.php');
+      _cache.farms = res.data || [];
+      document.getElementById('farms-tbl').innerHTML = tbl(
+        ['#','Name','Location','Capacity','Type','Status','Actions'],
+        _cache.farms.map(f=>`<tr>
+          <td>${f.id}</td><td>${escH(f.name)}</td><td>${escH(f.location)}</td>
+          <td>${f.capacity}</td><td>${cap(f.pen_type)}</td><td>${badge(f.status)}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditFarm(${JSON.stringify(f)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteFarm(${f.id})">Del</button>
+          </td></tr>`).join('')
+      );
+    } catch { document.getElementById('farms-tbl').innerHTML='<div class="empty">Could not load farms.</div>'; }
+  }
+
+  function farmForm(f={}) {
+    const pts=['broiler','layer','turkey','duck','mixed'];
+    return `
+      <div class="form-row">
+        <div class="form-group full"><label>Farm Name</label><input type="text" id="m-name" value="${escH(f.name||'')}" /></div>
+        <div class="form-group full"><label>Location</label><input type="text" id="m-loc" value="${escH(f.location||'')}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Capacity (birds)</label><input type="number" id="m-cap" min="1" value="${f.capacity||''}" /></div>
+        <div class="form-group"><label>Pen Type</label>
+          <select id="m-ptype">${pts.map(t=>`<option value="${t}"${t===f.pen_type?' selected':''}>${cap(t)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="m-status"><option value="active"${f.status==='active'?' selected':''}>Active</option><option value="inactive"${f.status==='inactive'?' selected':''}>Inactive</option></select></div>`;
+  }
+
+  function openAddFarm() {
+    openModal('Add Farm', farmForm(), async () => {
+      const fd = new FormData();
+      fd.append('name',fv('m-name')); fd.append('location',fv('m-loc'));
+      fd.append('capacity',fv('m-cap')); fd.append('pen_type',fv('m-ptype')); fd.append('status',fv('m-status'));
+      const res = await apiPost('/admin/farm/add_farm.php', fd);
+      if (res.status) { closeModal(); toast('Farm added.','ok'); loadFarms(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  function openEditFarm(f) {
+    openModal('Edit Farm', farmForm(f), async () => {
+      const fd = new FormData();
+      fd.append('id',f.id); fd.append('name',fv('m-name')); fd.append('location',fv('m-loc'));
+      fd.append('capacity',fv('m-cap')); fd.append('pen_type',fv('m-ptype')); fd.append('status',fv('m-status'));
+      const res = await apiPost('/admin/farm/update_farm.php', fd);
+      if (res.status) { closeModal(); toast('Farm updated.','ok'); loadFarms(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  async function deleteFarm(id) {
+    if (!confirm('Delete this farm? This will fail if flocks are linked.')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/farm/delete_farm.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadFarms(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FLOCKS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadFlocks() {
+    spinner('flocks-tbl');
+    try {
+      const res = await apiGet('/admin/flock/view_all_flocks.php');
+      _cache.flocks = res.data || [];
+      document.getElementById('flocks-tbl').innerHTML = tbl(
+        ['#','Batch','Farm','Bird Type','Initial','Current','Stocked','Status','Actions'],
+        _cache.flocks.map(f=>`<tr>
+          <td>${f.id}</td><td>${escH(f.batch_number)}</td><td>${escH(f.farm_name||'')}</td>
+          <td>${cap(f.bird_type)}</td><td>${f.initial_count}</td><td>${f.current_count}</td>
+          <td>${f.date_stocked||''}</td><td>${badge(f.status)}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditFlock(${JSON.stringify(f)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteFlock(${f.id})">Del</button>
+          </td></tr>`).join('')
+      );
+    } catch { document.getElementById('flocks-tbl').innerHTML='<div class="empty">Could not load flocks.</div>'; }
+  }
+
+  function flockForm(f={}) {
+    const bts=['broiler','layer','turkey','duck','cockerel','other'];
+    const sts=['active','sold','closed'];
+    return `
+      <div class="form-row">
+        <div class="form-group"><label>Farm</label><select id="m-farm">${farmOpts(f.farm_id)}</select></div>
+        <div class="form-group"><label>Batch Number</label><input type="text" id="m-batch" value="${escH(f.batch_number||'')}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Bird Type</label>
+          <select id="m-btype">${bts.map(t=>`<option value="${t}"${t===f.bird_type?' selected':''}>${cap(t)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Initial Count</label><input type="number" id="m-icount" min="1" value="${f.initial_count||''}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date Stocked</label><input type="date" id="m-dstocked" value="${f.date_stocked||''}" /></div>
+        <div class="form-group"><label>Age (weeks)</label><input type="number" id="m-age" min="0" value="${f.age_weeks||0}" /></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="m-status">${sts.map(s=>`<option value="${s}"${s===f.status?' selected':''}>${cap(s)}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Notes</label><textarea id="m-notes">${escH(f.notes||'')}</textarea></div>`;
+  }
+
+  function openAddFlock() {
+    openModal('Add Flock', flockForm(), async () => {
+      const fd = new FormData();
+      fd.append('farm_id',fv('m-farm')); fd.append('batch_number',fv('m-batch'));
+      fd.append('bird_type',fv('m-btype')); fd.append('initial_count',fv('m-icount'));
+      fd.append('date_stocked',fv('m-dstocked')); fd.append('age_weeks',fv('m-age'));
+      fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/flock/add_flock.php', fd);
+      if (res.status) { closeModal(); toast('Flock added.','ok'); loadFlocks(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  function openEditFlock(f) {
+    openModal('Edit Flock', flockForm(f), async () => {
+      const fd = new FormData();
+      fd.append('id',f.id); fd.append('farm_id',fv('m-farm')); fd.append('batch_number',fv('m-batch'));
+      fd.append('bird_type',fv('m-btype')); fd.append('initial_count',fv('m-icount'));
+      fd.append('date_stocked',fv('m-dstocked')); fd.append('age_weeks',fv('m-age'));
+      fd.append('status',fv('m-status')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/flock/update_flock.php', fd);
+      if (res.status) { closeModal(); toast('Flock updated.','ok'); loadFlocks(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  async function deleteFlock(id) {
+    if (!confirm('Delete this flock?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/flock/delete_flock.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadFlocks(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // WORKERS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadWorkers() {
+    spinner('workers-tbl');
+    try {
+      const res = await apiGet('/admin/worker/view_all_workers.php');
+      _cache.workers = res.data || [];
+      document.getElementById('workers-tbl').innerHTML = tbl(
+        ['#','Name','Phone','Email','Role','Status','Actions'],
+        _cache.workers.map(w=>`<tr>
+          <td>${w.id}</td><td>${escH(w.name)}</td><td>${escH(w.phone)}</td>
+          <td>${escH(w.email||'—')}</td><td>${cap(w.role)}</td><td>${badge(w.status)}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditWorker(${JSON.stringify(w)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteWorker(${w.id})">Del</button>
+          </td></tr>`).join('')
+      );
+    } catch { document.getElementById('workers-tbl').innerHTML='<div class="empty">Could not load workers.</div>'; }
+  }
+
+  function workerFormHtml(w={}) {
+    return `
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><input type="text" id="m-name" value="${escH(w.name||'')}" /></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="m-phone" value="${escH(w.phone||'')}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Email (optional)</label><input type="email" id="m-email" value="${escH(w.email||'')}" /></div>
+        <div class="form-group"><label>Role</label>
+          <select id="m-role"><option value="worker"${w.role==='worker'?' selected':''}>Worker</option><option value="supervisor"${w.role==='supervisor'?' selected':''}>Supervisor</option></select></div>
+      </div>
+      ${!w.id?`<div class="form-group"><label>Password</label><input type="password" id="m-pass" placeholder="Min 6 characters" /></div>`:''}
+      <div class="form-group"><label>Status</label>
+        <select id="m-status"><option value="active"${w.status==='active'?' selected':''}>Active</option><option value="inactive"${w.status==='inactive'?' selected':''}>Inactive</option></select></div>`;
+  }
+
+  function openAddWorker() {
+    openModal('Add Worker', workerFormHtml(), async () => {
+      const fd = new FormData();
+      fd.append('name',fv('m-name')); fd.append('phone',fv('m-phone'));
+      fd.append('email',fv('m-email')); fd.append('role',fv('m-role'));
+      fd.append('password',fv('m-pass')); fd.append('status',fv('m-status'));
+      const res = await apiPost('/admin/worker/add_worker.php', fd);
+      if (res.status) { closeModal(); toast('Worker added.','ok'); loadWorkers(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  function openEditWorker(w) {
+    openModal('Edit Worker', workerFormHtml(w), async () => {
+      const fd = new FormData();
+      fd.append('id',w.id); fd.append('name',fv('m-name')); fd.append('phone',fv('m-phone'));
+      fd.append('email',fv('m-email')); fd.append('role',fv('m-role')); fd.append('status',fv('m-status'));
+      const res = await apiPost('/admin/worker/update_worker.php', fd);
+      if (res.status) { closeModal(); toast('Worker updated.','ok'); loadWorkers(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  async function deleteWorker(id) {
+    if (!confirm('Delete this worker?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/worker/delete_worker.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadWorkers(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FEED INVENTORY
+  // ══════════════════════════════════════════════════════════════════
+  async function loadFeed() {
+    spinner('feed-tbl');
+    try {
+      const res = await apiGet('/admin/feed/view_all_feeds.php');
+      _cache.feeds = res.data || [];
+      document.getElementById('feed-tbl').innerHTML = tbl(
+        ['#','Name','Type','Qty (kg)','Unit Price','Supplier','Purchased','Actions'],
+        _cache.feeds.map(f=>`<tr>
+          <td>${f.id}</td><td>${escH(f.name)}</td><td>${cap(f.feed_type)}</td>
+          <td>${f.quantity_kg}</td><td>${fmt(f.unit_price)}</td>
+          <td>${escH(f.supplier||'—')}</td><td>${f.purchase_date||''}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditFeed(${JSON.stringify(f)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteFeed(${f.id})">Del</button>
+          </td></tr>`).join('')
+      );
+    } catch { document.getElementById('feed-tbl').innerHTML='<div class="empty">Could not load feeds.</div>'; }
+  }
+
+  function feedFormHtml(f={}) {
+    const fts=['starter','grower','finisher','layer','broiler','supplement','other'];
+    return `
+      <div class="form-row">
+        <div class="form-group"><label>Feed Name</label><input type="text" id="m-name" value="${escH(f.name||'')}" /></div>
+        <div class="form-group"><label>Type</label>
+          <select id="m-ftype">${fts.map(t=>`<option value="${t}"${t===f.feed_type?' selected':''}>${cap(t)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Quantity (kg)</label><input type="number" id="m-qty" min="0.1" step="0.01" value="${f.quantity_kg||''}" /></div>
+        <div class="form-group"><label>Unit Price (₦/kg)</label><input type="number" id="m-price" min="0.01" step="0.01" value="${f.unit_price||''}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Supplier (optional)</label><input type="text" id="m-supplier" value="${escH(f.supplier||'')}" /></div>
+        <div class="form-group"><label>Purchase Date</label><input type="date" id="m-pdate" value="${f.purchase_date||''}" /></div>
+      </div>`;
+  }
+
+  function openAddFeed() {
+    openModal('Add Feed', feedFormHtml(), async () => {
+      const fd = new FormData();
+      fd.append('name',fv('m-name')); fd.append('feed_type',fv('m-ftype'));
+      fd.append('quantity_kg',fv('m-qty')); fd.append('unit_price',fv('m-price'));
+      fd.append('supplier',fv('m-supplier')); fd.append('purchase_date',fv('m-pdate'));
+      const res = await apiPost('/admin/feed/add_feed.php', fd);
+      if (res.status) { closeModal(); toast('Feed added.','ok'); loadFeed(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  function openEditFeed(f) {
+    openModal('Edit Feed', feedFormHtml(f), async () => {
+      const fd = new FormData();
+      fd.append('id',f.id); fd.append('name',fv('m-name')); fd.append('feed_type',fv('m-ftype'));
+      fd.append('quantity_kg',fv('m-qty')); fd.append('unit_price',fv('m-price'));
+      fd.append('supplier',fv('m-supplier')); fd.append('purchase_date',fv('m-pdate'));
+      const res = await apiPost('/admin/feed/update_feed.php', fd);
+      if (res.status) { closeModal(); toast('Feed updated.','ok'); loadFeed(); prefetchDropdowns(); }
+      else modalErr(res.text);
+    });
+  }
+
+  async function deleteFeed(id) {
+    if (!confirm('Delete this feed record?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/feed/delete_feed.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadFeed(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FEED CONSUMPTION LOG
+  // ══════════════════════════════════════════════════════════════════
+  async function loadFeedLog() {
+    spinner('feed-log-tbl');
+    try {
+      const res = await apiGet('/admin/feed_consumption/view_all_feed_consumption.php');
+      document.getElementById('feed-log-tbl').innerHTML = tbl(
+        ['#','Batch','Feed','Qty (kg)','Date','Recorded By','Notes'],
+        (res.data||[]).map(r=>`<tr>
+          <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${escH(r.feed_name||'')}</td>
+          <td>${r.quantity_kg}</td><td>${r.consumption_date||''}</td>
+          <td>${escH(r.recorded_by_name||'')}</td><td>${escH(r.notes||'—')}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('feed-log-tbl').innerHTML='<div class="empty">Could not load feed log.</div>'; }
+  }
+
+  function openLogFeed() {
+    openModal('Log Feed Consumption', `
+      <div class="form-row">
+        <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
+        <div class="form-group"><label>Feed</label><select id="m-feed">${feedOpts()}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Quantity (kg)</label><input type="number" id="m-qty" min="0.1" step="0.01" /></div>
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts()}</select></div>
+        <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" /></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',fv('m-flock')); fd.append('feed_id',fv('m-feed'));
+      fd.append('quantity_kg',fv('m-qty')); fd.append('consumption_date',fv('m-date'));
+      fd.append('recorded_by',fv('m-worker')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/feed_consumption/add_feed_consumption.php', fd);
+      if (res.status) { closeModal(); toast('Feed consumption logged.','ok'); loadFeedLog(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // EGG PRODUCTION
+  // ══════════════════════════════════════════════════════════════════
+  async function loadEggProd() {
+    spinner('egg-prod-tbl');
+    try {
+      const res = await apiGet('/admin/egg_production/view_all_egg_production.php');
+      document.getElementById('egg-prod-tbl').innerHTML = tbl(
+        ['#','Batch','Collected','Broken','Net','Date','Recorded By','Notes'],
+        (res.data||[]).map(r=>`<tr>
+          <td>${r.id}</td><td>${escH(r.batch_number||'')}</td>
+          <td>${r.eggs_collected}</td><td>${r.broken_eggs}</td>
+          <td>${parseInt(r.eggs_collected)-parseInt(r.broken_eggs)}</td>
+          <td>${r.collection_date||''}</td><td>${escH(r.recorded_by_name||'')}</td>
+          <td>${escH(r.notes||'—')}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('egg-prod-tbl').innerHTML='<div class="empty">Could not load egg production.</div>'; }
+  }
+
+  function openLogEgg() {
+    openModal('Log Egg Collection', `
+      <div class="form-row">
+        <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts()}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Eggs Collected</label><input type="number" id="m-eggs" min="0" value="0" /></div>
+        <div class="form-group"><label>Broken Eggs</label><input type="number" id="m-broken" min="0" value="0" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Collection Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" /></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',fv('m-flock')); fd.append('eggs_collected',fv('m-eggs'));
+      fd.append('broken_eggs',fv('m-broken')); fd.append('collection_date',fv('m-date'));
+      fd.append('recorded_by',fv('m-worker')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/egg_production/add_egg_production.php', fd);
+      if (res.status) { closeModal(); toast('Egg collection logged.','ok'); loadEggProd(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // HEALTH RECORDS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadHealth() {
+    spinner('health-tbl');
+    try {
+      const res = await apiGet('/admin/health_record/view_all_health_records.php');
+      document.getElementById('health-tbl').innerHTML = tbl(
+        ['#','Batch','Type','Description','Medication','Date','Next Due'],
+        (res.data||[]).map(r=>`<tr>
+          <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${cap(r.record_type)}</td>
+          <td style="max-width:160px">${escH(r.description)}</td><td>${escH(r.medication||'—')}</td>
+          <td>${r.record_date||''}</td><td>${r.next_due_date||'—'}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('health-tbl').innerHTML='<div class="empty">Could not load health records.</div>'; }
+  }
+
+  function openAddHealth() {
+    const hts=['vaccination','treatment','checkup','deworming','other'];
+    openModal('Add Health Record', `
+      <div class="form-row">
+        <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
+        <div class="form-group"><label>Record Type</label>
+          <select id="m-rtype">${hts.map(t=>`<option value="${t}">${cap(t)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-group full"><label>Description</label><textarea id="m-desc"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Medication (optional)</label><input type="text" id="m-med" /></div>
+        <div class="form-group"><label>Dosage (optional)</label><input type="text" id="m-dosage" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Administered By</label><input type="text" id="m-admin" /></div>
+        <div class="form-group"><label>Record Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+      </div>
+      <div class="form-group"><label>Next Due Date (optional)</label><input type="date" id="m-next" /></div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',fv('m-flock')); fd.append('record_type',fv('m-rtype'));
+      fd.append('description',fv('m-desc')); fd.append('medication',fv('m-med'));
+      fd.append('dosage',fv('m-dosage')); fd.append('administered_by',fv('m-admin'));
+      fd.append('record_date',fv('m-date')); fd.append('next_due_date',fv('m-next'));
+      const res = await apiPost('/admin/health_record/add_health_record.php', fd);
+      if (res.status) { closeModal(); toast('Health record added.','ok'); loadHealth(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // MORTALITY
+  // ══════════════════════════════════════════════════════════════════
+  async function loadMortality() {
+    spinner('mortality-tbl');
+    try {
+      const res = await apiGet('/admin/mortality/view_all_mortality.php');
+      document.getElementById('mortality-tbl').innerHTML = tbl(
+        ['#','Batch','Count','Cause','Date','Recorded By','Notes'],
+        (res.data||[]).map(r=>`<tr>
+          <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${r.count}</td>
+          <td>${cap(r.cause)}</td><td>${r.mortality_date||''}</td>
+          <td>${escH(r.recorded_by_name||'')}</td><td>${escH(r.notes||'—')}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('mortality-tbl').innerHTML='<div class="empty">Could not load mortality records.</div>'; }
+  }
+
+  function openLogMortality() {
+    const causes=['disease','predator','injury','unknown','other'];
+    openModal('Log Mortality', `
+      <div class="form-row">
+        <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts()}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Count (birds)</label><input type="number" id="m-count" min="1" value="1" /></div>
+        <div class="form-group"><label>Cause</label>
+          <select id="m-cause">${causes.map(c=>`<option value="${c}">${cap(c)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" /></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',fv('m-flock')); fd.append('count',fv('m-count'));
+      fd.append('cause',fv('m-cause')); fd.append('mortality_date',fv('m-date'));
+      fd.append('recorded_by',fv('m-worker')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/mortality/add_mortality.php', fd);
+      if (res.status) { closeModal(); toast('Mortality logged.','ok'); loadMortality(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // EXPENSES
+  // ══════════════════════════════════════════════════════════════════
+  async function loadExpenses() {
+    spinner('expenses-tbl');
+    try {
+      const res = await apiGet('/admin/expense/view_all_expenses.php');
+      document.getElementById('expenses-tbl').innerHTML = tbl(
+        ['#','Category','Description','Amount','Date','Recorded By'],
+        (res.data||[]).map(r=>`<tr>
+          <td>${r.id}</td><td>${cap(r.category)}</td>
+          <td>${escH(r.description)}</td><td>${fmt(r.amount)}</td>
+          <td>${r.expense_date||''}</td><td>${escH(r.recorded_by_name||'')}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('expenses-tbl').innerHTML='<div class="empty">Could not load expenses.</div>'; }
+  }
+
+  function openAddExpense() {
+    const cats=['feed','medication','equipment','labor','utilities','transport','other'];
+    openModal('Add Expense', `
+      <div class="form-row">
+        <div class="form-group"><label>Category</label>
+          <select id="m-cat">${cats.map(c=>`<option value="${c}">${cap(c)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Amount (₦)</label><input type="number" id="m-amount" min="0.01" step="0.01" /></div>
+      </div>
+      <div class="form-group"><label>Description</label><input type="text" id="m-desc" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts()}</select></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('category',fv('m-cat')); fd.append('description',fv('m-desc'));
+      fd.append('amount',fv('m-amount')); fd.append('expense_date',fv('m-date'));
+      fd.append('recorded_by',fv('m-worker'));
+      const res = await apiPost('/admin/expense/add_expense.php', fd);
+      if (res.status) { closeModal(); toast('Expense recorded.','ok'); loadExpenses(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // SALES
+  // ══════════════════════════════════════════════════════════════════
+  async function loadSales() {
+    spinner('sales-tbl');
+    try {
+      const res = await apiGet('/admin/sales/view_all_sales.php');
+      document.getElementById('sales-tbl').innerHTML = tbl(
+        ['#','Batch','Type','Qty','Unit Price','Total','Buyer','Date','By'],
+        (res.data||[]).map(r=>`<tr>
+          <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${cap(r.sale_type)}</td>
+          <td>${r.quantity}</td><td>${fmt(r.unit_price)}</td><td>${fmt(r.total_amount)}</td>
+          <td>${escH(r.buyer_name)}</td><td>${r.sale_date||''}</td>
+          <td>${escH(r.recorded_by_name||'')}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('sales-tbl').innerHTML='<div class="empty">Could not load sales.</div>'; }
+  }
+
+  function openAddSale() {
+    const sts=['live_birds','eggs','dressed_birds'];
+    openModal('Record Sale', `
+      <div class="form-row">
+        <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
+        <div class="form-group"><label>Sale Type</label>
+          <select id="m-stype">${sts.map(s=>`<option value="${s}">${cap(s)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Quantity</label><input type="number" id="m-qty" min="1" /></div>
+        <div class="form-group"><label>Unit Price (₦)</label><input type="number" id="m-price" min="0.01" step="0.01" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Buyer Name</label><input type="text" id="m-buyer" /></div>
+        <div class="form-group"><label>Buyer Phone (optional)</label><input type="tel" id="m-bphone" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Sale Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts()}</select></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',fv('m-flock')); fd.append('sale_type',fv('m-stype'));
+      fd.append('quantity',fv('m-qty')); fd.append('unit_price',fv('m-price'));
+      fd.append('buyer_name',fv('m-buyer')); fd.append('buyer_phone',fv('m-bphone'));
+      fd.append('sale_date',fv('m-date')); fd.append('recorded_by',fv('m-worker'));
+      const res = await apiPost('/admin/sales/add_sale.php', fd);
+      if (res.status) { closeModal(); toast('Sale recorded.','ok'); loadSales(); }
+      else modalErr(res.text);
+    });
+  }
+
+</script>
+</body>
+</html>
