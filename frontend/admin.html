@@ -289,6 +289,7 @@
       <a href="javascript:void(0)" onclick="goTo('mortality')"      data-sec="mortality">                    <span class="ico">📉</span> Mortality</a>
       <a href="javascript:void(0)" onclick="goTo('expenses')"       data-sec="expenses">                     <span class="ico">💸</span> Expenses</a>
       <a href="javascript:void(0)" onclick="goTo('sales')"          data-sec="sales">                        <span class="ico">🧾</span> Sales</a>
+      <a href="javascript:void(0)" onclick="goTo('reports')"        data-sec="reports">                      <span class="ico">📈</span> Profit &amp; Loss</a>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="adminLogout()">Log Out</button>
@@ -435,6 +436,54 @@
         <div class="table-wrap" id="sales-tbl"><div class="spinner"></div></div>
       </div>
 
+      <!-- ── PROFIT & LOSS REPORT ── -->
+      <div id="sec-reports" class="section">
+        <div class="sec-header"><h3>Profit &amp; Loss Report</h3></div>
+
+        <!-- Filters -->
+        <div style="background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1.5rem">
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.3rem">Period</label>
+              <select id="rpt-period" onchange="toggleRptFields()" style="padding:.45rem .75rem;border:1.5px solid var(--border);border-radius:7px;font-size:.88rem;font-family:inherit">
+                <option value="weekly">Weekly</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+            <div id="rpt-year-wrap">
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.3rem">Year</label>
+              <input type="number" id="rpt-year" min="2020" max="2099" style="width:90px;padding:.45rem .75rem;border:1.5px solid var(--border);border-radius:7px;font-size:.88rem;font-family:inherit" />
+            </div>
+            <div id="rpt-month-wrap">
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.3rem">Month</label>
+              <select id="rpt-month" style="padding:.45rem .75rem;border:1.5px solid var(--border);border-radius:7px;font-size:.88rem;font-family:inherit">
+                <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+                <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+                <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+                <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+              </select>
+            </div>
+            <div id="rpt-date-wrap" style="display:none">
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.3rem">Any date in the week</label>
+              <input type="date" id="rpt-date" style="padding:.45rem .75rem;border:1.5px solid var(--border);border-radius:7px;font-size:.88rem;font-family:inherit" />
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.3rem">Flock (optional)</label>
+              <select id="rpt-flock" style="padding:.45rem .75rem;border:1.5px solid var(--border);border-radius:7px;font-size:.88rem;font-family:inherit">
+                <option value="">All Flocks</option>
+              </select>
+            </div>
+            <button class="btn btn-green" onclick="loadReports()">Generate Report</button>
+          </div>
+        </div>
+
+        <!-- Report output -->
+        <div id="reports-content">
+          <div class="empty">Select a period above and click <strong>Generate Report</strong>.</div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -457,15 +506,25 @@
 
 <script>
   const API  = 'https://jabman.online/pound_farming/API';
+
+  // Decode JWT exp claim without a library to detect expired stored tokens
+  function isTokenExpired(token) {
+    try {
+      const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(b64));
+      return payload.exp < Math.floor(Date.now() / 1000);
+    } catch { return true; }
+  }
+
   let adminAuth = JSON.parse(localStorage.getItem('pf_admin') || 'null');
+  // Clear stale/expired token immediately so the app never loads with a dead session
+  if (adminAuth && adminAuth.access_token && isTokenExpired(adminAuth.access_token)) {
+    adminAuth = null;
+    localStorage.removeItem('pf_admin');
+  }
+
   let _modalAction = null;
   let _cache = {};  // simple cache: flocks[], workers[], feeds[], farms[]
-
-  // ── INIT ────────────────────────────────────────────────────────────────
-  document.getElementById('top-date').textContent = new Date().toDateString();
-  if (adminAuth && adminAuth.access_token) {
-    showApp();
-  }
 
   function showApp() {
     document.getElementById('login-screen').style.display = 'none';
@@ -473,7 +532,8 @@
     document.getElementById('sb-admin-name').textContent  = adminAuth.name || 'Admin';
     document.getElementById('top-admin-name').textContent = 'Hi, ' + (adminAuth.name || 'Admin');
     goTo('dashboard');
-    prefetchDropdowns();
+    // prefetchDropdowns is NOT called here — dashboard load already fetches
+    // farms/flocks/workers and populates _cache to avoid concurrent request burst
   }
 
   // ── AUTH ─────────────────────────────────────────────────────────────────
@@ -523,7 +583,8 @@
     dashboard:'Dashboard', orders:'Orders', listings:'Egg Listings',
     farms:'Farms', flocks:'Flocks', workers:'Workers', feed:'Feed Inventory',
     'feed-log':'Feed Consumption', 'egg-prod':'Egg Production',
-    health:'Health Records', mortality:'Mortality', expenses:'Expenses', sales:'Sales'
+    health:'Health Records', mortality:'Mortality', expenses:'Expenses', sales:'Sales',
+    reports:'Profit & Loss'
   };
   function goTo(sec) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -550,6 +611,7 @@
       mortality:  loadMortality,
       expenses:   loadExpenses,
       sales:      loadSales,
+      reports:    initReports,
     };
     if (loaders[sec]) loaders[sec]();
   }
@@ -561,13 +623,26 @@
     return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(tid));
   }
   async function apiGet(path) {
+    if (!adminAuth) { handleSessionExpired(); throw new Error('Not authenticated'); }
     const res = await fetchWithTimeout(API + path, { headers: { Authorization: 'Bearer ' + adminAuth.access_token } });
+    if (res.status === 401) { handleSessionExpired(); throw new Error('Unauthorized'); }
     return res.json();
   }
   async function apiPost(path, fd, auth = true) {
+    if (auth && !adminAuth) { handleSessionExpired(); throw new Error('Not authenticated'); }
     const h = auth ? { Authorization: 'Bearer ' + adminAuth.access_token } : {};
     const res = await fetchWithTimeout(API + path, { method: 'POST', headers: h, body: fd });
+    if (auth && res.status === 401) { handleSessionExpired(); throw new Error('Unauthorized'); }
     return res.json();
+  }
+  function handleSessionExpired() {
+    if (!adminAuth) return; // already handled
+    adminAuth = null;
+    localStorage.removeItem('pf_admin');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('l-err').textContent = 'Session expired. Please log in again.';
+    document.getElementById('l-err').style.display = 'block';
   }
 
   // ── PREFETCH DROPDOWNS ────────────────────────────────────────────────────
@@ -624,6 +699,9 @@
     document.getElementById('modal-err').style.display = 'none';
     try {
       await _modalAction();
+    } catch(e) {
+      if (!adminAuth) { closeModal(); } // session expired — login screen already showing
+      else modalErr('An unexpected error occurred. Please try again.');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Save';
@@ -649,30 +727,40 @@
   // ══════════════════════════════════════════════════════════════════
   // DASHBOARD
   // ══════════════════════════════════════════════════════════════════
+  let _dashVer = 0;
   async function loadDashboard() {
+    const ver = ++_dashVer;
     spinner('dash-stats'); spinner('dash-orders');
     try {
-      const [farms,flocks,workers,orders,listings] = await Promise.all([
+      const results = await Promise.allSettled([
         apiGet('/admin/farm/view_all_farms.php'),
         apiGet('/admin/flock/view_all_flocks.php'),
         apiGet('/admin/worker/view_all_workers.php'),
         apiGet('/admin/booking/view_all_bookings.php'),
         apiGet('/admin/availability/view_all_availability.php'),
       ]);
-      const orderList  = orders.data  || [];
+      if (ver !== _dashVer) return; // a newer load started — discard these results
+
+      const get = i => results[i].status === 'fulfilled' ? (results[i].value.data || []) : [];
+      const farmList    = get(0);
+      const flockList   = get(1);
+      const workerList  = get(2);
+      const orderList   = get(3);
+      const listingList = get(4);
+
       const pending    = orderList.filter(o=>o.order_status==='pending').length;
       const dispatched = orderList.filter(o=>o.order_status==='dispatched').length;
       const revenue    = orderList.filter(o=>o.payment_status==='paid').reduce((s,o)=>s+parseFloat(o.total_amount||0),0);
 
       document.getElementById('dash-stats').innerHTML = `
-        <div class="stat-card"><span class="sc-label">Farms</span><span class="sc-value">${(farms.data||[]).length}</span></div>
-        <div class="stat-card"><span class="sc-label">Active Flocks</span><span class="sc-value">${(flocks.data||[]).filter(f=>f.status==='active').length}</span></div>
-        <div class="stat-card"><span class="sc-label">Workers</span><span class="sc-value">${(workers.data||[]).length}</span></div>
+        <div class="stat-card"><span class="sc-label">Farms</span><span class="sc-value">${farmList.length}</span></div>
+        <div class="stat-card"><span class="sc-label">Active Flocks</span><span class="sc-value">${flockList.filter(f=>f.status==='active').length}</span></div>
+        <div class="stat-card"><span class="sc-label">Workers</span><span class="sc-value">${workerList.length}</span></div>
         <div class="stat-card orange"><span class="sc-label">Pending Orders</span><span class="sc-value">${pending}</span></div>
         <div class="stat-card"><span class="sc-label">Dispatched</span><span class="sc-value">${dispatched}</span></div>
         <div class="stat-card"><span class="sc-label">Total Revenue</span><span class="sc-value" style="font-size:1.2rem">${fmt(revenue)}</span><span class="sc-sub">from paid orders</span></div>
         <div class="stat-card"><span class="sc-label">Total Orders</span><span class="sc-value">${orderList.length}</span></div>
-        <div class="stat-card"><span class="sc-label">Listings Active</span><span class="sc-value">${(listings.data||[]).filter(l=>l.is_available==1).length}</span></div>`;
+        <div class="stat-card"><span class="sc-label">Listings Active</span><span class="sc-value">${listingList.filter(l=>l.is_available==1).length}</span></div>`;
 
       const recent = orderList.slice(0,10);
       document.getElementById('dash-orders').innerHTML = tbl(
@@ -687,7 +775,18 @@
           <td style="font-size:.78rem">${(o.created_at||'').split(' ')[0]}</td>
         </tr>`).join('')
       );
-    } catch(e){
+
+      // Populate dropdown cache from data already fetched — no extra requests needed
+      _cache.farms   = farmList;
+      _cache.flocks  = flockList;
+      _cache.workers = workerList;
+      // Fetch only feeds (not in dashboard calls) as a single background request
+      apiGet('/admin/feed/view_all_feeds.php')
+        .then(r => { _cache.feeds = r.data || []; })
+        .catch(() => {});
+
+    } catch(e) {
+      if (ver !== _dashVer) return;
       document.getElementById('dash-stats').innerHTML='<p style="color:var(--muted)">Could not load stats.</p>';
       document.getElementById('dash-orders').innerHTML='<div class="empty">Could not load recent orders.</div>';
     }
@@ -1063,7 +1162,7 @@
       </div>
       <div class="form-row">
         <div class="form-group"><label>Supplier (optional)</label><input type="text" id="m-supplier" value="${escH(f.supplier||'')}" /></div>
-        <div class="form-group"><label>Purchase Date</label><input type="date" id="m-pdate" value="${f.purchase_date||''}" /></div>
+        <div class="form-group"><label>Purchase Date</label><input type="date" id="m-pdate" value="${f.purchase_date||new Date().toISOString().split('T')[0]}" /></div>
       </div>`;
   }
 
@@ -1115,7 +1214,8 @@
     } catch { document.getElementById('feed-log-tbl').innerHTML='<div class="empty">Could not load feed log.</div>'; }
   }
 
-  function openLogFeed() {
+  async function openLogFeed() {
+    if (!_cache.flocks?.length || !_cache.workers?.length || !_cache.feeds?.length) await prefetchDropdowns();
     openModal('Log Feed Consumption', `
       <div class="form-row">
         <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
@@ -1158,7 +1258,8 @@
     } catch { document.getElementById('egg-prod-tbl').innerHTML='<div class="empty">Could not load egg production.</div>'; }
   }
 
-  function openLogEgg() {
+  async function openLogEgg() {
+    if (!_cache.flocks?.length || !_cache.workers?.length) await prefetchDropdowns();
     openModal('Log Egg Collection', `
       <div class="form-row">
         <div class="form-group"><label>Flock</label><select id="m-flock">${flockOpts()}</select></div>
@@ -1199,7 +1300,8 @@
     } catch { document.getElementById('health-tbl').innerHTML='<div class="empty">Could not load health records.</div>'; }
   }
 
-  function openAddHealth() {
+  async function openAddHealth() {
+    if (!_cache.flocks?.length) await prefetchDropdowns();
     const hts=['vaccination','treatment','checkup','deworming','other'];
     openModal('Add Health Record', `
       <div class="form-row">
@@ -1245,7 +1347,8 @@
     } catch { document.getElementById('mortality-tbl').innerHTML='<div class="empty">Could not load mortality records.</div>'; }
   }
 
-  function openLogMortality() {
+  async function openLogMortality() {
+    if (!_cache.flocks?.length || !_cache.workers?.length) await prefetchDropdowns();
     const causes=['disease','predator','injury','unknown','other'];
     openModal('Log Mortality', `
       <div class="form-row">
@@ -1280,7 +1383,7 @@
       const res = await apiGet('/admin/expense/view_all_expenses.php');
       document.getElementById('expenses-tbl').innerHTML = tbl(
         ['#','Category','Description','Amount','Date','Recorded By'],
-        (res.data||[]).map(r=>`<tr>
+        (res.data?.expenses||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${cap(r.category)}</td>
           <td>${escH(r.description)}</td><td>${fmt(r.amount)}</td>
           <td>${r.expense_date||''}</td><td>${escH(r.recorded_by_name||'')}</td></tr>`).join('')
@@ -1288,7 +1391,8 @@
     } catch { document.getElementById('expenses-tbl').innerHTML='<div class="empty">Could not load expenses.</div>'; }
   }
 
-  function openAddExpense() {
+  async function openAddExpense() {
+    if (!_cache.workers?.length) await prefetchDropdowns();
     const cats=['feed','medication','equipment','labor','utilities','transport','other'];
     openModal('Add Expense', `
       <div class="form-row">
@@ -1329,7 +1433,8 @@
     } catch { document.getElementById('sales-tbl').innerHTML='<div class="empty">Could not load sales.</div>'; }
   }
 
-  function openAddSale() {
+  async function openAddSale() {
+    if (!_cache.flocks?.length || !_cache.workers?.length) await prefetchDropdowns();
     const sts=['live_birds','eggs','dressed_birds'];
     openModal('Record Sale', `
       <div class="form-row">
@@ -1358,6 +1463,171 @@
       if (res.status) { closeModal(); toast('Sale recorded.','ok'); loadSales(); }
       else modalErr(res.text);
     });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // PROFIT & LOSS REPORT
+  // ══════════════════════════════════════════════════════════════════
+  function initReports() {
+    // Set sensible defaults on first open
+    const now = new Date();
+    const yearEl  = document.getElementById('rpt-year');
+    const monthEl = document.getElementById('rpt-month');
+    const dateEl  = document.getElementById('rpt-date');
+    if (yearEl  && !yearEl.value)  yearEl.value  = now.getFullYear();
+    if (monthEl && !monthEl.value) monthEl.value = now.getMonth() + 1;
+    if (dateEl  && !dateEl.value)  dateEl.value  = now.toISOString().split('T')[0];
+
+    // Populate flock dropdown from cache
+    const flockSel = document.getElementById('rpt-flock');
+    if (flockSel && flockSel.options.length === 1) {
+      (_cache.flocks || []).forEach(f => {
+        const o = document.createElement('option');
+        o.value = f.id;
+        o.textContent = escH(f.batch_number) + ' (' + cap(f.bird_type) + ')';
+        flockSel.appendChild(o);
+      });
+    }
+    toggleRptFields();
+  }
+
+  function toggleRptFields() {
+    const period = document.getElementById('rpt-period')?.value;
+    document.getElementById('rpt-month-wrap').style.display = period === 'monthly'  ? '' : 'none';
+    document.getElementById('rpt-date-wrap').style.display  = period === 'weekly'   ? '' : 'none';
+    document.getElementById('rpt-year-wrap').style.display  = period === 'weekly'   ? 'none' : '';
+  }
+
+  async function loadReports() {
+    const period = document.getElementById('rpt-period').value;
+    const year   = document.getElementById('rpt-year').value   || new Date().getFullYear();
+    const month  = document.getElementById('rpt-month').value  || (new Date().getMonth() + 1);
+    const date   = document.getElementById('rpt-date').value   || new Date().toISOString().split('T')[0];
+    const flock  = document.getElementById('rpt-flock').value;
+
+    let qs = '?period=' + period;
+    if (period === 'monthly') { qs += '&year=' + year + '&month=' + month; }
+    else if (period === 'yearly') { qs += '&year=' + year; }
+    else if (period === 'weekly') { qs += '&date=' + date; }
+    if (flock) qs += '&flock_id=' + flock;
+
+    document.getElementById('reports-content').innerHTML = '<div class="spinner"></div>';
+
+    try {
+      const res = await apiGet('/admin/reports/profit_loss.php' + qs);
+      if (!res.status) {
+        document.getElementById('reports-content').innerHTML =
+          '<div class="empty">' + escH(res.text || 'Failed to generate report.') + '</div>';
+        return;
+      }
+
+      const d = res.data;
+      const s = d.summary;
+      const isProfit = s.is_profit;
+
+      // Revenue breakdown rows
+      const revRows = Object.entries(d.revenue.breakdown || {}).map(([type, val]) =>
+        `<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.88rem">
+          <span>${cap(type)}</span>
+          <span style="font-weight:700">${fmt(val.total_amount)} <span style="color:var(--muted);font-weight:400">(${val.quantity} units)</span></span>
+        </div>`
+      ).join('');
+
+      // Expense breakdown rows (only non-zero)
+      const expLines = [
+        ['Vaccine / Medication', d.expenses.vaccine],
+        ['Feeding',              d.expenses.feeding],
+        ['Equipment',            d.expenses.equipment],
+        ['Labor',                d.expenses.labor],
+        ['Utilities',            d.expenses.utilities],
+        ['Transport',            d.expenses.transport],
+        ['Other',                d.expenses.other],
+      ];
+      const expRows = expLines.filter(([,v]) => v > 0).map(([label, val]) =>
+        `<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.88rem">
+          <span>${label}</span><span style="font-weight:700;color:var(--orange)">${fmt(val)}</span>
+        </div>`
+      ).join('');
+
+      // Mortality cause badges
+      const causeBadges = Object.entries(d.mortality.by_cause || {}).map(([cause, count]) =>
+        `<span style="background:var(--red-lt);color:var(--red);padding:.2rem .65rem;border-radius:20px;font-size:.78rem;font-weight:600">${cap(cause)}: ${count}</span>`
+      ).join(' ');
+
+      document.getElementById('reports-content').innerHTML = `
+        <!-- Period label -->
+        <div style="background:var(--card);border-radius:var(--radius);padding:.9rem 1.25rem;margin-bottom:1.25rem;box-shadow:var(--shadow);font-size:.88rem;color:var(--muted)">
+          <strong style="color:var(--green-md)">${cap(d.period)} Report</strong>
+          &nbsp;•&nbsp; ${d.start_date} to ${d.end_date}
+          ${d.flock_id ? ` &nbsp;•&nbsp; Flock #${d.flock_id}` : ' &nbsp;•&nbsp; All Flocks'}
+        </div>
+
+        <!-- Summary stat cards -->
+        <div class="stats-grid" style="margin-bottom:1.25rem">
+          <div class="stat-card">
+            <span class="sc-label">Total Revenue</span>
+            <span class="sc-value" style="color:var(--green-md)">${fmt(s.total_revenue)}</span>
+            <span class="sc-sub">From all sales</span>
+          </div>
+          <div class="stat-card orange">
+            <span class="sc-label">Total Expenses</span>
+            <span class="sc-value">${fmt(s.total_expenses)}</span>
+            <span class="sc-sub">All categories</span>
+          </div>
+          <div class="stat-card ${isProfit ? '' : 'red'}">
+            <span class="sc-label">Net ${isProfit ? 'Profit' : 'Loss'}</span>
+            <span class="sc-value" style="${isProfit ? 'color:var(--green-md)' : ''}">${fmt(Math.abs(s.net_amount))}</span>
+            <span class="sc-sub" style="font-weight:700;color:${isProfit ? 'var(--green-md)' : 'var(--red)'}">
+              ${isProfit ? '▲ Profit' : '▼ Loss'}
+            </span>
+          </div>
+          <div class="stat-card red">
+            <span class="sc-label">Mortality Loss (est.)</span>
+            <span class="sc-value" style="font-size:1.2rem">${fmt(d.mortality.estimated_monetary_loss)}</span>
+            <span class="sc-sub">${d.mortality.total_birds_lost} birds lost</span>
+          </div>
+        </div>
+
+        <!-- Revenue & Expense breakdown side by side -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+          <div style="background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)">
+            <h4 style="color:var(--green-md);margin-bottom:.9rem;font-size:.95rem">Revenue Breakdown</h4>
+            ${revRows || '<p style="color:var(--muted);font-size:.88rem">No sales in this period.</p>'}
+            <div style="display:flex;justify-content:space-between;padding:.6rem 0;font-size:.9rem;font-weight:700;color:var(--green-md)">
+              <span>Total</span><span>${fmt(d.revenue.total)}</span>
+            </div>
+          </div>
+          <div style="background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)">
+            <h4 style="color:var(--orange);margin-bottom:.9rem;font-size:.95rem">Expense Breakdown</h4>
+            ${expRows || '<p style="color:var(--muted);font-size:.88rem">No expenses in this period.</p>'}
+            <div style="display:flex;justify-content:space-between;padding:.6rem 0;font-size:.9rem;font-weight:700;color:var(--orange)">
+              <span>Total</span><span>${fmt(d.expenses.total)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mortality -->
+        ${d.mortality.total_birds_lost > 0 ? `
+        <div style="background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)">
+          <h4 style="color:var(--red);margin-bottom:.75rem;font-size:.95rem">Mortality</h4>
+          <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.88rem;margin-bottom:.75rem">
+            <span><strong>${d.mortality.total_birds_lost}</strong> birds lost</span>
+            <span>Avg price used: <strong>${fmt(d.mortality.avg_bird_price_used)}</strong>/bird</span>
+            <span>Estimated loss: <strong style="color:var(--red)">${fmt(d.mortality.estimated_monetary_loss)}</strong></span>
+          </div>
+          ${causeBadges ? `<div style="display:flex;gap:.5rem;flex-wrap:wrap">${causeBadges}</div>` : ''}
+        </div>` : ''}
+      `;
+    } catch(e) {
+      document.getElementById('reports-content').innerHTML =
+        '<div class="empty">Could not load report. Please try again.</div>';
+    }
+  }
+
+  // ── INIT — runs after all functions and const declarations are ready ──────
+  document.getElementById('top-date').textContent = new Date().toDateString();
+  if (adminAuth && adminAuth.access_token) {
+    showApp();
   }
 
 </script>

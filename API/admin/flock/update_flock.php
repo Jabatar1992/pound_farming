@@ -9,14 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 ValidateAPITokenSentIN('admin');
 
-if (!isset($_POST['id'], $_POST['farm_id'], $_POST['bird_type'], $_POST['current_count'], $_POST['age_weeks'], $_POST['status'])) {
-    respondBadRequest("Invalid request. id, farm_id, bird_type, current_count, age_weeks and status are required.");
+if (!isset($_POST['id'], $_POST['farm_id'], $_POST['batch_number'], $_POST['bird_type'], $_POST['initial_count'], $_POST['age_weeks'], $_POST['status'])) {
+    respondBadRequest("Invalid request. id, farm_id, batch_number, bird_type, initial_count, age_weeks and status are required.");
 }
 
 $id            = (int) trim($_POST['id']);
 $farm_id       = (int) trim($_POST['farm_id']);
+$batch_number  = strip_tags(trim($_POST['batch_number']));
 $bird_type     = strip_tags(trim($_POST['bird_type']));
-$current_count = (int) trim($_POST['current_count']);
+$initial_count = (int) trim($_POST['initial_count']);
 $age_weeks     = (int) trim($_POST['age_weeks']);
 $status        = strip_tags(trim($_POST['status']));
 $notes         = isset($_POST['notes']) ? strip_tags(trim($_POST['notes'])) : null;
@@ -28,10 +29,12 @@ if ($id <= 0) {
     respondBadRequest("Invalid flock ID.");
 } elseif ($farm_id <= 0) {
     respondBadRequest("Invalid farm ID.");
+} elseif ($batch_number === '') {
+    respondBadRequest("Batch number is required.");
 } elseif (!in_array($bird_type, $validBirdTypes)) {
     respondBadRequest("bird_type must be one of: " . implode(', ', $validBirdTypes) . ".");
-} elseif ($current_count < 0) {
-    respondBadRequest("Current count cannot be negative.");
+} elseif ($initial_count <= 0) {
+    respondBadRequest("Initial count must be a positive number.");
 } elseif (!in_array($status, $validStatuses)) {
     respondBadRequest("status must be one of: " . implode(', ', $validStatuses) . ".");
 } else {
@@ -49,8 +52,8 @@ if ($id <= 0) {
     $connect->begin_transaction();
     try {
 
-        $stmt = $connect->prepare("UPDATE flock SET farm_id = ?, bird_type = ?, current_count = ?, age_weeks = ?, status = ?, notes = ? WHERE id = ?");
-        $stmt->bind_param("issiisi", $farm_id, $bird_type, $current_count, $age_weeks, $status, $notes, $id);
+        $stmt = $connect->prepare("UPDATE flock SET farm_id = ?, batch_number = ?, bird_type = ?, initial_count = ?, age_weeks = ?, status = ?, notes = ? WHERE id = ?");
+        $stmt->bind_param("issiissi", $farm_id, $batch_number, $bird_type, $initial_count, $age_weeks, $status, $notes, $id);
         $stmt->execute();
 
         if ($stmt->affected_rows >= 0) {

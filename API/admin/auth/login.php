@@ -47,9 +47,17 @@ if (isset($_POST['admin_id'], $_POST['password'])) {
         $stmt->close();
 
         // ======================
-        // PLAIN PASSWORD CHECK
+        // PASSWORD CHECK
+        // Supports both bcrypt hashes (created via API) and
+        // plain-text passwords (inserted directly into the DB).
         // ======================
-        if ($password !== $row['password']) {
+        $storedPassword = $row['password'];
+        $isHashed       = substr($storedPassword, 0, 4) === '$2y$';
+        $passwordValid  = $isHashed
+            ? check_pass($password, $storedPassword)
+            : ($password === $storedPassword);
+
+        if (!$passwordValid) {
             respondBadRequest("Invalid Admin ID or password.");
         }
 
