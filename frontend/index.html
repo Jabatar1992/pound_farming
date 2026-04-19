@@ -392,6 +392,29 @@
       </form>
     </div>
 
+    <!-- Change password -->
+    <div class="detail-card">
+      <h3>Change Password</h3>
+      <form onsubmit="handleChangePassword(event)">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="bcp-current" placeholder="••••••••" required />
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="bcp-new" placeholder="Min 6 characters" required />
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="bcp-confirm" placeholder="Repeat new password" required />
+        </div>
+        <p id="bcp-error" class="form-error"></p>
+        <div class="action-row">
+          <button type="submit" class="btn-pay" id="bcp-btn">Update Password</button>
+        </div>
+      </form>
+    </div>
+
     <!-- Danger zone -->
     <div class="detail-card">
       <h3 style="color:#842029">Account</h3>
@@ -1152,6 +1175,31 @@
     } finally {
       btn.disabled = false; btn.textContent = 'Save Changes';
     }
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('bcp-error');
+    const btn   = document.getElementById('bcp-btn');
+    errEl.style.display = 'none';
+    const cur  = document.getElementById('bcp-current').value;
+    const nw   = document.getElementById('bcp-new').value;
+    const conf = document.getElementById('bcp-confirm').value;
+    if (nw.length < 6) { errEl.textContent = 'New password must be at least 6 characters.'; errEl.style.display='block'; return; }
+    if (nw !== conf)   { errEl.textContent = 'Passwords do not match.'; errEl.style.display='block'; return; }
+    btn.disabled = true; btn.textContent = 'Updating…';
+    const fd = new FormData();
+    fd.append('current_password', cur); fd.append('new_password', nw);
+    try {
+      const res = await apiPost('/buyer/auth/change_password.php', fd);
+      if (res.status) {
+        document.getElementById('bcp-current').value = '';
+        document.getElementById('bcp-new').value     = '';
+        document.getElementById('bcp-confirm').value = '';
+        toast('Password changed successfully.', 'success');
+      } else { errEl.textContent = res.text || 'Failed.'; errEl.style.display='block'; }
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display='block'; }
+    finally { btn.disabled = false; btn.textContent = 'Update Password'; }
   }
 
   // ── UTILS ────────────────────────────────────────────────────────────────

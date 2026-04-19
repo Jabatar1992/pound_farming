@@ -62,6 +62,15 @@ if (isset($_POST['admin_id'], $_POST['password'])) {
         }
 
         // ======================
+        // SUPER ADMIN CHECK
+        // The admin with the lowest ID is the super admin.
+        // Only the super admin can manage (create/edit/delete) other admins.
+        // ======================
+        $minStmt = $connect->query("SELECT MIN(id) AS min_id FROM admin");
+        $minId   = (int) $minStmt->fetch_assoc()['min_id'];
+        $isSuper = ((int) $row['id'] === $minId);
+
+        // ======================
         // GENERATE TOKEN
         // ======================
         $token = getTokenToSendAPI($row['id'], 'admin');
@@ -74,6 +83,7 @@ if (isset($_POST['admin_id'], $_POST['password'])) {
             "admin_id"     => $row['admin_id'],
             "name"         => $row['name'],
             "email"        => $row['email'],
+            "is_super"     => $isSuper,
             "access_token" => $token,
             "token_type"   => "Bearer",
         ]);

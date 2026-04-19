@@ -59,7 +59,7 @@ if ($farm_id <= 0) {
     try {
 
         $stmt = $connect->prepare("INSERT INTO flock (farm_id, batch_number, bird_type, initial_count, current_count, date_stocked, age_weeks, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issiiiss", $farm_id, $batch_number, $bird_type, $initial_count, $initial_count, $date_stocked, $age_weeks, $notes);
+        $stmt->bind_param("issiisis", $farm_id, $batch_number, $bird_type, $initial_count, $initial_count, $date_stocked, $age_weeks, $notes);
         $stmt->execute();
 
         if ($stmt->affected_rows > 0) {

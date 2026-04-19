@@ -40,14 +40,20 @@ if ($flock_id <= 0) {
     respondBadRequest("Invalid worker ID for recorded_by.");
 } else {
 
-    $flockCheck = $connect->prepare("SELECT id FROM flock WHERE id = ? LIMIT 1");
+    $flockCheck = $connect->prepare("SELECT id, current_count FROM flock WHERE id = ? LIMIT 1");
     $flockCheck->bind_param("i", $flock_id);
     $flockCheck->execute();
-    if ($flockCheck->get_result()->num_rows === 0) {
+    $flockResult = $flockCheck->get_result();
+    if ($flockResult->num_rows === 0) {
         $flockCheck->close();
         respondBadRequest("Flock not found.");
     }
+    $flock = $flockResult->fetch_assoc();
     $flockCheck->close();
+
+    if (in_array($sale_type, ['live_birds', 'dressed_birds']) && $quantity > $flock['current_count']) {
+        respondBadRequest("Sale quantity exceeds current flock size (" . $flock['current_count'] . ").");
+    }
 
     $workerCheck = $connect->prepare("SELECT id FROM worker WHERE id = ? LIMIT 1");
     $workerCheck->bind_param("i", $recorded_by);
@@ -69,6 +75,15 @@ if ($flock_id <= 0) {
 
         if ($stmt->affected_rows > 0) {
             $inserted_id = $connect->insert_id;
+
+            if (in_array($sale_type, ['live_birds', 'dressed_birds'])) {
+                $newCount    = $flock['current_count'] - $quantity;
+                $updateFlock = $connect->prepare("UPDATE flock SET current_count = ? WHERE id = ?");
+                $updateFlock->bind_param("ii", $newCount, $flock_id);
+                $updateFlock->execute();
+                $updateFlock->close();
+            }
+
             $connect->commit();
             $stmt->close();
 

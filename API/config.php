@@ -14,6 +14,8 @@ define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
 define('DB_NAME',     'pound_farming');
 
+// online database = expeycwp_pound_farming
+// online password = Jabatarnew123@
 // ======================
 // CORS SETTINGS
 // ======================

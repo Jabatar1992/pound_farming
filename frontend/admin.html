@@ -290,6 +290,10 @@
       <a href="javascript:void(0)" onclick="goTo('expenses')"       data-sec="expenses">                     <span class="ico">💸</span> Expenses</a>
       <a href="javascript:void(0)" onclick="goTo('sales')"          data-sec="sales">                        <span class="ico">🧾</span> Sales</a>
       <a href="javascript:void(0)" onclick="goTo('reports')"        data-sec="reports">                      <span class="ico">📈</span> Profit &amp; Loss</a>
+      <a href="javascript:void(0)" onclick="goTo('stock-report')"  data-sec="stock-report">                  <span class="ico">🐔</span> Stock Summary</a>
+      <a href="javascript:void(0)" onclick="goTo('flock-perf')"    data-sec="flock-perf">                    <span class="ico">📊</span> Flock Performance</a>
+      <a href="javascript:void(0)" onclick="goTo('admins')"        data-sec="admins">                        <span class="ico">🔑</span> Admins</a>
+      <a href="javascript:void(0)" onclick="goTo('my-profile')"    data-sec="my-profile">                    <span class="ico">👤</span> My Profile</a>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="adminLogout()">Log Out</button>
@@ -316,6 +320,7 @@
         <div class="stats-grid" id="dash-stats"><div class="spinner"></div></div>
         <div class="sec-header"><h3>Recent Orders</h3></div>
         <div class="table-wrap" id="dash-orders"><div class="spinner"></div></div>
+
       </div>
 
       <!-- ── ORDERS ── -->
@@ -484,6 +489,69 @@
         </div>
       </div>
 
+      <!-- ── STOCK SUMMARY ── -->
+      <div id="sec-stock-report" class="section">
+        <div class="sec-header"><h3>Stock Summary</h3><button class="btn btn-green" onclick="loadStockReport()">Refresh</button></div>
+        <div id="stock-report-content"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── FLOCK PERFORMANCE ── -->
+      <div id="sec-flock-perf" class="section">
+        <div class="sec-header"><h3>Flock Performance</h3></div>
+        <div class="filter-bar">
+          <select id="perf-flock"><option value="">All Flocks</option></select>
+          <button class="btn btn-green" onclick="loadFlockPerf()">Generate</button>
+        </div>
+        <div id="flock-perf-content"><div class="empty">Select a flock above (or leave blank for all) and click <strong>Generate</strong>.</div></div>
+      </div>
+
+      <!-- ── ADMINS ── -->
+      <div id="sec-admins" class="section">
+        <div class="sec-header">
+          <h3>Admin Accounts</h3>
+          <button class="btn btn-green" onclick="openAddAdmin()">+ Add Admin</button>
+        </div>
+        <div class="table-wrap" id="admins-tbl"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ── MY PROFILE ── -->
+      <div id="sec-my-profile" class="section">
+        <div class="sec-header"><h3>My Profile</h3></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:860px">
+
+          <!-- Profile info / edit -->
+          <div style="background:var(--card);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow)">
+            <h4 style="color:var(--green-md);margin-bottom:1.1rem">Account Details</h4>
+            <div id="profile-view">
+              <p style="margin-bottom:.5rem;font-size:.9rem"><strong>Name:</strong> <span id="pv-name">—</span></p>
+              <p style="margin-bottom:.5rem;font-size:.9rem"><strong>Email:</strong> <span id="pv-email">—</span></p>
+              <p style="margin-bottom:1rem;font-size:.9rem"><strong>Admin ID:</strong> <span id="pv-adminid">—</span></p>
+              <button class="btn btn-orange btn-sm" onclick="showProfileEdit()">Edit Profile</button>
+            </div>
+            <div id="profile-edit" style="display:none">
+              <div class="form-group"><label>Name</label><input type="text" id="pe-name" /></div>
+              <div class="form-group"><label>Email</label><input type="email" id="pe-email" /></div>
+              <p id="pe-err" class="form-err"></p>
+              <div style="display:flex;gap:.5rem;margin-top:.5rem">
+                <button class="btn btn-green btn-sm" onclick="saveProfileUpdate()">Save</button>
+                <button class="btn btn-ghost btn-sm" onclick="hideProfileEdit()">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Change password -->
+          <div style="background:var(--card);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow)">
+            <h4 style="color:var(--green-md);margin-bottom:1.1rem">Change Password</h4>
+            <div class="form-group"><label>Current Password</label><input type="password" id="cp-current" /></div>
+            <div class="form-group"><label>New Password</label><input type="password" id="cp-new" /></div>
+            <div class="form-group"><label>Confirm New Password</label><input type="password" id="cp-confirm" /></div>
+            <p id="cp-err" class="form-err"></p>
+            <button class="btn btn-green btn-sm" onclick="saveChangePassword()">Update Password</button>
+          </div>
+
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -526,11 +594,27 @@
   let _modalAction = null;
   let _cache = {};  // simple cache: flocks[], workers[], feeds[], farms[]
 
-  function showApp() {
+  async function showApp() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     document.getElementById('sb-admin-name').textContent  = adminAuth.name || 'Admin';
     document.getElementById('top-admin-name').textContent = 'Hi, ' + (adminAuth.name || 'Admin');
+
+    // If is_super is missing (old session restored from localStorage), fetch it now
+    if (adminAuth.is_super === undefined) {
+      try {
+        const res = await apiGet('/admin/auth/view_all_admins.php');
+        // if we can fetch admins, we ARE the super admin
+        adminAuth.is_super = res.status === true;
+      } catch {
+        adminAuth.is_super = false;
+      }
+      localStorage.setItem('pf_admin', JSON.stringify(adminAuth));
+    }
+
+    // Hide Admins nav link for non-super admins
+    const adminsNavLink = document.querySelector('nav a[data-sec="admins"]');
+    if (adminsNavLink) adminsNavLink.style.display = adminAuth.is_super ? '' : 'none';
     goTo('dashboard');
     // prefetchDropdowns is NOT called here — dashboard load already fetches
     // farms/flocks/workers and populates _cache to avoid concurrent request burst
@@ -584,7 +668,8 @@
     farms:'Farms', flocks:'Flocks', workers:'Workers', feed:'Feed Inventory',
     'feed-log':'Feed Consumption', 'egg-prod':'Egg Production',
     health:'Health Records', mortality:'Mortality', expenses:'Expenses', sales:'Sales',
-    reports:'Profit & Loss'
+    reports:'Profit & Loss', 'stock-report':'Stock Summary',
+    'flock-perf':'Flock Performance', admins:'Admin Accounts', 'my-profile':'My Profile'
   };
   function goTo(sec) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -611,7 +696,11 @@
       mortality:  loadMortality,
       expenses:   loadExpenses,
       sales:      loadSales,
-      reports:    initReports,
+      reports:      initReports,
+      'stock-report': loadStockReport,
+      'flock-perf':   initFlockPerf,
+      admins:         loadAdmins,
+      'my-profile':   loadMyProfile,
     };
     if (loaders[sec]) loaders[sec]();
   }
@@ -715,6 +804,7 @@
 
   // ── UTILS ──────────────────────────────────────────────────────────────────
   function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function jso(o)  { return JSON.stringify(o).replace(/'/g,"&#39;"); }
   function fmt(n)  { return '₦' + Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2}); }
   function cap(s)  { return s ? s.charAt(0).toUpperCase()+s.slice(1).replace(/_/g,' ') : '—'; }
   function tbl(heads, rows) {
@@ -858,7 +948,7 @@
           <td>${badge(l.is_available==1?'active':'inactive')}</td>
           <td style="font-size:.78rem">${(l.created_at||'').split(' ')[0]}</td>
           <td class="tbl-actions">
-            <button class="btn btn-sm btn-orange" onclick='openEditListing(${JSON.stringify(l)})'>Edit</button>
+            <button class="btn btn-sm btn-orange" onclick='openEditListing(${jso(l)})'>Edit</button>
             <button class="btn btn-sm btn-red"    onclick="deleteListing(${l.id})">Del</button>
           </td>
         </tr>`).join('')
@@ -930,7 +1020,7 @@
           <td>${f.id}</td><td>${escH(f.name)}</td><td>${escH(f.location)}</td>
           <td>${f.capacity}</td><td>${cap(f.pen_type)}</td><td>${badge(f.status)}</td>
           <td class="tbl-actions">
-            <button class="btn btn-sm btn-orange" onclick='openEditFarm(${JSON.stringify(f)})'>Edit</button>
+            <button class="btn btn-sm btn-orange" onclick='openEditFarm(${jso(f)})'>Edit</button>
             <button class="btn btn-sm btn-red"    onclick="deleteFarm(${f.id})">Del</button>
           </td></tr>`).join('')
       );
@@ -997,7 +1087,8 @@
           <td>${cap(f.bird_type)}</td><td>${f.initial_count}</td><td>${f.current_count}</td>
           <td>${f.date_stocked||''}</td><td>${badge(f.status)}</td>
           <td class="tbl-actions">
-            <button class="btn btn-sm btn-orange" onclick='openEditFlock(${JSON.stringify(f)})'>Edit</button>
+            <button class="btn btn-sm btn-orange" onclick='openEditFlock(${jso(f)})'>Edit</button>
+            <button class="btn btn-sm btn-green"  onclick='openRestockFlock(${jso(f)})'>Restock</button>
             <button class="btn btn-sm btn-red"    onclick="deleteFlock(${f.id})">Del</button>
           </td></tr>`).join('')
       );
@@ -1073,7 +1164,7 @@
           <td>${w.id}</td><td>${escH(w.name)}</td><td>${escH(w.phone)}</td>
           <td>${escH(w.email||'—')}</td><td>${cap(w.role)}</td><td>${badge(w.status)}</td>
           <td class="tbl-actions">
-            <button class="btn btn-sm btn-orange" onclick='openEditWorker(${JSON.stringify(w)})'>Edit</button>
+            <button class="btn btn-sm btn-orange" onclick='openEditWorker(${jso(w)})'>Edit</button>
             <button class="btn btn-sm btn-red"    onclick="deleteWorker(${w.id})">Del</button>
           </td></tr>`).join('')
       );
@@ -1141,7 +1232,7 @@
           <td>${f.quantity_kg}</td><td>${fmt(f.unit_price)}</td>
           <td>${escH(f.supplier||'—')}</td><td>${f.purchase_date||''}</td>
           <td class="tbl-actions">
-            <button class="btn btn-sm btn-orange" onclick='openEditFeed(${JSON.stringify(f)})'>Edit</button>
+            <button class="btn btn-sm btn-orange" onclick='openEditFeed(${jso(f)})'>Edit</button>
             <button class="btn btn-sm btn-red"    onclick="deleteFeed(${f.id})">Del</button>
           </td></tr>`).join('')
       );
@@ -1205,11 +1296,15 @@
     try {
       const res = await apiGet('/admin/feed_consumption/view_all_feed_consumption.php');
       document.getElementById('feed-log-tbl').innerHTML = tbl(
-        ['#','Batch','Feed','Qty (kg)','Date','Recorded By','Notes'],
+        ['#','Batch','Feed','Qty (kg)','Date','Recorded By','Notes','Actions'],
         (res.data||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${escH(r.feed_name||'')}</td>
           <td>${r.quantity_kg}</td><td>${r.consumption_date||''}</td>
-          <td>${escH(r.recorded_by_name||'')}</td><td>${escH(r.notes||'—')}</td></tr>`).join('')
+          <td>${escH(r.recorded_by_name||'')}</td><td>${escH(r.notes||'—')}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditFeedLog(${jso(r)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteFeedLog(${r.id})">Del</button>
+          </td></tr>`).join('')
       );
     } catch { document.getElementById('feed-log-tbl').innerHTML='<div class="empty">Could not load feed log.</div>'; }
   }
@@ -1247,13 +1342,17 @@
     try {
       const res = await apiGet('/admin/egg_production/view_all_egg_production.php');
       document.getElementById('egg-prod-tbl').innerHTML = tbl(
-        ['#','Batch','Collected','Broken','Net','Date','Recorded By','Notes'],
+        ['#','Batch','Collected','Broken','Net','Date','Recorded By','Notes','Actions'],
         (res.data||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${escH(r.batch_number||'')}</td>
           <td>${r.eggs_collected}</td><td>${r.broken_eggs}</td>
           <td>${parseInt(r.eggs_collected)-parseInt(r.broken_eggs)}</td>
           <td>${r.collection_date||''}</td><td>${escH(r.recorded_by_name||'')}</td>
-          <td>${escH(r.notes||'—')}</td></tr>`).join('')
+          <td>${escH(r.notes||'—')}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditEggProd(${jso(r)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteEggProd(${r.id})">Del</button>
+          </td></tr>`).join('')
       );
     } catch { document.getElementById('egg-prod-tbl').innerHTML='<div class="empty">Could not load egg production.</div>'; }
   }
@@ -1291,11 +1390,15 @@
     try {
       const res = await apiGet('/admin/health_record/view_all_health_records.php');
       document.getElementById('health-tbl').innerHTML = tbl(
-        ['#','Batch','Type','Description','Medication','Date','Next Due'],
+        ['#','Batch','Type','Description','Medication','Date','Next Due','Actions'],
         (res.data||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${cap(r.record_type)}</td>
           <td style="max-width:160px">${escH(r.description)}</td><td>${escH(r.medication||'—')}</td>
-          <td>${r.record_date||''}</td><td>${r.next_due_date||'—'}</td></tr>`).join('')
+          <td>${r.record_date||''}</td><td>${r.next_due_date||'—'}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditHealth(${jso(r)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteHealth(${r.id})">Del</button>
+          </td></tr>`).join('')
       );
     } catch { document.getElementById('health-tbl').innerHTML='<div class="empty">Could not load health records.</div>'; }
   }
@@ -1338,11 +1441,15 @@
     try {
       const res = await apiGet('/admin/mortality/view_all_mortality.php');
       document.getElementById('mortality-tbl').innerHTML = tbl(
-        ['#','Batch','Count','Cause','Date','Recorded By','Notes'],
+        ['#','Batch','Count','Cause','Date','Recorded By','Notes','Actions'],
         (res.data||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${r.count}</td>
           <td>${cap(r.cause)}</td><td>${r.mortality_date||''}</td>
-          <td>${escH(r.recorded_by_name||'')}</td><td>${escH(r.notes||'—')}</td></tr>`).join('')
+          <td>${escH(r.recorded_by_name||'')}</td><td>${escH(r.notes||'—')}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditMortality(${jso(r)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteMortality(${r.id})">Del</button>
+          </td></tr>`).join('')
       );
     } catch { document.getElementById('mortality-tbl').innerHTML='<div class="empty">Could not load mortality records.</div>'; }
   }
@@ -1382,11 +1489,15 @@
     try {
       const res = await apiGet('/admin/expense/view_all_expenses.php');
       document.getElementById('expenses-tbl').innerHTML = tbl(
-        ['#','Category','Description','Amount','Date','Recorded By'],
-        (res.data?.expenses||[]).map(r=>`<tr>
+        ['#','Category','Description','Amount','Date','Recorded By','Actions'],
+        (res.data?.expenses||res.data||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${cap(r.category)}</td>
           <td>${escH(r.description)}</td><td>${fmt(r.amount)}</td>
-          <td>${r.expense_date||''}</td><td>${escH(r.recorded_by_name||'')}</td></tr>`).join('')
+          <td>${r.expense_date||''}</td><td>${escH(r.recorded_by_name||'')}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditExpense(${jso(r)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteExpense(${r.id})">Del</button>
+          </td></tr>`).join('')
       );
     } catch { document.getElementById('expenses-tbl').innerHTML='<div class="empty">Could not load expenses.</div>'; }
   }
@@ -1423,12 +1534,16 @@
     try {
       const res = await apiGet('/admin/sales/view_all_sales.php');
       document.getElementById('sales-tbl').innerHTML = tbl(
-        ['#','Batch','Type','Qty','Unit Price','Total','Buyer','Date','By'],
+        ['#','Batch','Type','Qty','Unit Price','Total','Buyer','Date','By','Actions'],
         (res.data||[]).map(r=>`<tr>
           <td>${r.id}</td><td>${escH(r.batch_number||'')}</td><td>${cap(r.sale_type)}</td>
           <td>${r.quantity}</td><td>${fmt(r.unit_price)}</td><td>${fmt(r.total_amount)}</td>
           <td>${escH(r.buyer_name)}</td><td>${r.sale_date||''}</td>
-          <td>${escH(r.recorded_by_name||'')}</td></tr>`).join('')
+          <td>${escH(r.recorded_by_name||'')}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditSale(${jso(r)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteSale(${r.id})">Del</button>
+          </td></tr>`).join('')
       );
     } catch { document.getElementById('sales-tbl').innerHTML='<div class="empty">Could not load sales.</div>'; }
   }
@@ -1622,6 +1737,448 @@
       document.getElementById('reports-content').innerHTML =
         '<div class="empty">Could not load report. Please try again.</div>';
     }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // MORTALITY — EDIT / DELETE
+  // ══════════════════════════════════════════════════════════════════
+  function openEditMortality(r) {
+    const causes=['disease','predator','injury','unknown','other'];
+    openModal('Edit Mortality #'+r.id, `
+      <div class="form-row">
+        <div class="form-group"><label>Count</label><input type="number" id="m-count" min="1" value="${r.count}" /></div>
+        <div class="form-group"><label>Cause</label>
+          <select id="m-cause">${causes.map(c=>`<option value="${c}"${c===r.cause?' selected':''}>${cap(c)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${r.mortality_date||''}" /></div>
+        <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" value="${escH(r.notes||'')}" /></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',r.id); fd.append('count',fv('m-count')); fd.append('cause',fv('m-cause'));
+      fd.append('mortality_date',fv('m-date')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/mortality/update_mortality.php', fd);
+      if (res.status) { closeModal(); toast('Mortality updated.','ok'); loadMortality(); }
+      else modalErr(res.text);
+    });
+  }
+  async function deleteMortality(id) {
+    if (!confirm('Delete this mortality record? The flock count will be restored.')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/mortality/delete_mortality.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadMortality(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // HEALTH RECORDS — EDIT / DELETE
+  // ══════════════════════════════════════════════════════════════════
+  function openEditHealth(r) {
+    const hts=['vaccination','treatment','checkup','deworming','other'];
+    openModal('Edit Health Record #'+r.id, `
+      <div class="form-row">
+        <div class="form-group"><label>Type</label>
+          <select id="m-rtype">${hts.map(t=>`<option value="${t}"${t===r.record_type?' selected':''}>${cap(t)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${r.record_date||''}" /></div>
+      </div>
+      <div class="form-group full"><label>Description</label><textarea id="m-desc">${escH(r.description||'')}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Medication</label><input type="text" id="m-med" value="${escH(r.medication||'')}" /></div>
+        <div class="form-group"><label>Dosage</label><input type="text" id="m-dosage" value="${escH(r.dosage||'')}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Administered By</label><input type="text" id="m-admin" value="${escH(r.administered_by||'')}" /></div>
+        <div class="form-group"><label>Next Due Date</label><input type="date" id="m-next" value="${r.next_due_date||''}" /></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',r.id); fd.append('record_type',fv('m-rtype')); fd.append('description',fv('m-desc'));
+      fd.append('medication',fv('m-med')); fd.append('dosage',fv('m-dosage'));
+      fd.append('administered_by',fv('m-admin')); fd.append('record_date',fv('m-date'));
+      fd.append('next_due_date',fv('m-next'));
+      const res = await apiPost('/admin/health_record/update_health_record.php', fd);
+      if (res.status) { closeModal(); toast('Health record updated.','ok'); loadHealth(); }
+      else modalErr(res.text);
+    });
+  }
+  async function deleteHealth(id) {
+    if (!confirm('Delete this health record?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/health_record/delete_health_record.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadHealth(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FEED CONSUMPTION — EDIT / DELETE
+  // ══════════════════════════════════════════════════════════════════
+  async function openEditFeedLog(r) {
+    if (!_cache.feeds?.length || !_cache.workers?.length) await prefetchDropdowns();
+    openModal('Edit Feed Log #'+r.id, `
+      <div class="form-row">
+        <div class="form-group"><label>Feed</label><select id="m-feed">${feedOpts(r.feed_id)}</select></div>
+        <div class="form-group"><label>Quantity (kg)</label><input type="number" id="m-qty" min="0.1" step="0.01" value="${r.quantity_kg}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${r.consumption_date||''}" /></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts(r.recorded_by)}</select></div>
+      </div>
+      <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" value="${escH(r.notes||'')}" /></div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',r.id); fd.append('feed_id',fv('m-feed')); fd.append('quantity_kg',fv('m-qty'));
+      fd.append('consumption_date',fv('m-date')); fd.append('recorded_by',fv('m-worker')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/feed_consumption/update_feed_consumption.php', fd);
+      if (res.status) { closeModal(); toast('Feed log updated.','ok'); loadFeedLog(); }
+      else modalErr(res.text);
+    });
+  }
+  async function deleteFeedLog(id) {
+    if (!confirm('Delete this feed consumption record?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/feed_consumption/delete_feed_consumption.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadFeedLog(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // EGG PRODUCTION — EDIT / DELETE
+  // ══════════════════════════════════════════════════════════════════
+  async function openEditEggProd(r) {
+    if (!_cache.workers?.length) await prefetchDropdowns();
+    openModal('Edit Egg Log #'+r.id, `
+      <div class="form-row">
+        <div class="form-group"><label>Eggs Collected</label><input type="number" id="m-eggs" min="0" value="${r.eggs_collected}" /></div>
+        <div class="form-group"><label>Broken Eggs</label><input type="number" id="m-broken" min="0" value="${r.broken_eggs}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${r.collection_date||''}" /></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts(r.recorded_by)}</select></div>
+      </div>
+      <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" value="${escH(r.notes||'')}" /></div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',r.id); fd.append('eggs_collected',fv('m-eggs')); fd.append('broken_eggs',fv('m-broken'));
+      fd.append('collection_date',fv('m-date')); fd.append('recorded_by',fv('m-worker')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/egg_production/update_egg_production.php', fd);
+      if (res.status) { closeModal(); toast('Egg log updated.','ok'); loadEggProd(); }
+      else modalErr(res.text);
+    });
+  }
+  async function deleteEggProd(id) {
+    if (!confirm('Delete this egg production record?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/egg_production/delete_egg_production.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadEggProd(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // EXPENSES — EDIT / DELETE
+  // ══════════════════════════════════════════════════════════════════
+  async function openEditExpense(r) {
+    if (!_cache.workers?.length) await prefetchDropdowns();
+    const cats=['feed','medication','equipment','labor','utilities','transport','other'];
+    openModal('Edit Expense #'+r.id, `
+      <div class="form-row">
+        <div class="form-group"><label>Category</label>
+          <select id="m-cat">${cats.map(c=>`<option value="${c}"${c===r.category?' selected':''}>${cap(c)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Amount (₦)</label><input type="number" id="m-amount" min="0.01" step="0.01" value="${r.amount}" /></div>
+      </div>
+      <div class="form-group"><label>Description</label><input type="text" id="m-desc" value="${escH(r.description||'')}" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${r.expense_date||''}" /></div>
+        <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts(r.recorded_by)}</select></div>
+      </div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',r.id); fd.append('category',fv('m-cat')); fd.append('description',fv('m-desc'));
+      fd.append('amount',fv('m-amount')); fd.append('expense_date',fv('m-date')); fd.append('recorded_by',fv('m-worker'));
+      const res = await apiPost('/admin/expense/update_expense.php', fd);
+      if (res.status) { closeModal(); toast('Expense updated.','ok'); loadExpenses(); }
+      else modalErr(res.text);
+    });
+  }
+  async function deleteExpense(id) {
+    if (!confirm('Delete this expense record?')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/expense/delete_expense.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadExpenses(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // SALES — EDIT / DELETE
+  // ══════════════════════════════════════════════════════════════════
+  async function openEditSale(r) {
+    if (!_cache.workers?.length) await prefetchDropdowns();
+    const sts=['live_birds','eggs','dressed_birds'];
+    openModal('Edit Sale #'+r.id, `
+      <div class="form-row">
+        <div class="form-group"><label>Sale Type</label>
+          <select id="m-stype">${sts.map(s=>`<option value="${s}"${s===r.sale_type?' selected':''}>${cap(s)}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="m-qty" min="1" value="${r.quantity}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Unit Price (₦)</label><input type="number" id="m-price" min="0.01" step="0.01" value="${r.unit_price}" /></div>
+        <div class="form-group"><label>Buyer Name</label><input type="text" id="m-buyer" value="${escH(r.buyer_name||'')}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Buyer Phone</label><input type="tel" id="m-bphone" value="${escH(r.buyer_phone||'')}" /></div>
+        <div class="form-group"><label>Sale Date</label><input type="date" id="m-date" value="${r.sale_date||''}" /></div>
+      </div>
+      <div class="form-group"><label>Recorded By</label><select id="m-worker">${workerOpts(r.recorded_by)}</select></div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',r.id); fd.append('sale_type',fv('m-stype')); fd.append('quantity',fv('m-qty'));
+      fd.append('unit_price',fv('m-price')); fd.append('buyer_name',fv('m-buyer'));
+      fd.append('buyer_phone',fv('m-bphone')); fd.append('sale_date',fv('m-date'));
+      fd.append('recorded_by',fv('m-worker'));
+      const res = await apiPost('/admin/sales/update_sale.php', fd);
+      if (res.status) { closeModal(); toast('Sale updated.','ok'); loadSales(); }
+      else modalErr(res.text);
+    });
+  }
+  async function deleteSale(id) {
+    if (!confirm('Delete this sale? Bird count will be restored if applicable.')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/sales/delete_sale.php', fd);
+    if (res.status) { toast('Deleted.','ok'); loadSales(); } else toast(res.text,'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FLOCK RESTOCK
+  // ══════════════════════════════════════════════════════════════════
+  function openRestockFlock(f) {
+    openModal('Restock Flock: '+escH(f.batch_number), `
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:.9rem">Current count: <strong>${f.current_count}</strong></p>
+      <div class="form-row">
+        <div class="form-group"><label>Birds to Add</label><input type="number" id="m-count" min="1" value="1" /></div>
+        <div class="form-group"><label>Restock Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}" /></div>
+      </div>
+      <div class="form-group"><label>Notes (optional)</label><input type="text" id="m-notes" /></div>`, async () => {
+      const fd = new FormData();
+      fd.append('flock_id',f.id); fd.append('count',fv('m-count'));
+      fd.append('restock_date',fv('m-date')); fd.append('notes',fv('m-notes'));
+      const res = await apiPost('/admin/flock/restock_flock.php', fd);
+      if (res.status) { closeModal(); toast('Flock restocked.','ok'); loadFlocks(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // DASHBOARD ADMINS TABLE (super admin only)
+  // ══════════════════════════════════════════════════════════════════
+  async function loadDashAdmins() {
+    document.getElementById('dash-admins-tbl').innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await apiGet('/admin/auth/view_all_admins.php');
+      document.getElementById('dash-admins-tbl').innerHTML = tbl(
+        ['#','Admin ID','Name','Email','Created','Actions'],
+        (res.data||[]).map(a=>`<tr>
+          <td>${a.id}</td>
+          <td>${escH(a.admin_id)}</td>
+          <td>${escH(a.name)}</td>
+          <td>${escH(a.email)}</td>
+          <td style="font-size:.78rem">${(a.created_at||'').split(' ')[0]}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditAdmin(${jso(a)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteDashAdmin(${a.id})">Delete</button>
+          </td></tr>`).join('')
+      );
+    } catch {
+      document.getElementById('dash-admins-tbl').innerHTML = '<div class="empty">Could not load admins.</div>';
+    }
+  }
+
+  async function deleteDashAdmin(id) {
+    if (!confirm('Delete this admin account? This cannot be undone.')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/auth/delete_admin.php', fd);
+    if (res.status) { toast('Admin deleted.','ok'); loadDashAdmins(); loadAdmins(); }
+    else toast(res.text, 'err');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // ADMINS
+  // ══════════════════════════════════════════════════════════════════
+  async function loadAdmins() {
+    spinner('admins-tbl');
+    try {
+      const res = await apiGet('/admin/auth/view_all_admins.php');
+      document.getElementById('admins-tbl').innerHTML = tbl(
+        ['#','Admin ID','Name','Email','Created','Actions'],
+        (res.data||[]).map(a=>`<tr>
+          <td>${a.id}</td>
+          <td>${escH(a.admin_id)}</td>
+          <td>${escH(a.name)}</td>
+          <td>${escH(a.email)}</td>
+          <td style="font-size:.78rem">${(a.created_at||'').split(' ')[0]}</td>
+          <td class="tbl-actions">
+            <button class="btn btn-sm btn-orange" onclick='openEditAdmin(${jso(a)})'>Edit</button>
+            <button class="btn btn-sm btn-red"    onclick="deleteAdmin(${a.id})">Delete</button>
+          </td></tr>`).join('')
+      );
+    } catch { document.getElementById('admins-tbl').innerHTML='<div class="empty">Could not load admins.</div>'; }
+  }
+
+  function openEditAdmin(a) {
+    openModal('Edit Admin: ' + escH(a.name), `
+      <div class="form-group"><label>Admin ID</label><input type="text" value="${escH(a.admin_id)}" disabled style="background:var(--bg);color:var(--muted)" /></div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="m-name" value="${escH(a.name)}" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="m-email" value="${escH(a.email)}" /></div>`, async () => {
+      const fd = new FormData();
+      fd.append('id',    a.id);
+      fd.append('name',  fv('m-name'));
+      fd.append('email', fv('m-email'));
+      const res = await apiPost('/admin/auth/update_admin.php', fd);
+      if (res.status) { closeModal(); toast('Admin updated.','ok'); loadAdmins(); loadDashAdmins(); }
+      else modalErr(res.text);
+    });
+  }
+
+  async function deleteAdmin(id) {
+    if (!confirm('Delete this admin account? This cannot be undone.')) return;
+    const fd = new FormData(); fd.append('id', id);
+    const res = await apiPost('/admin/auth/delete_admin.php', fd);
+    if (res.status) { toast('Admin deleted.','ok'); loadAdmins(); }
+    else toast(res.text, 'err');
+  }
+
+  function openAddAdmin() {
+    openModal('Create Admin Account', `
+      <div class="form-row">
+        <div class="form-group"><label>Admin ID</label><input type="text" id="m-adminid" placeholder="e.g. ADM001" /></div>
+        <div class="form-group"><label>Full Name</label><input type="text" id="m-name" /></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" id="m-email" /></div>
+      <div class="form-group"><label>Password (min 6 chars)</label><input type="password" id="m-pass" /></div>`, async () => {
+      const fd = new FormData();
+      fd.append('admin_id', fv('m-adminid')); fd.append('name', fv('m-name'));
+      fd.append('email', fv('m-email')); fd.append('password', fv('m-pass'));
+      const res = await apiPost('/admin/auth/create_admin.php', fd);
+      if (res.status) { closeModal(); toast('Admin created.','ok'); loadAdmins(); loadDashAdmins(); }
+      else modalErr(res.text);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // STOCK SUMMARY REPORT
+  // ══════════════════════════════════════════════════════════════════
+  async function loadStockReport() {
+    document.getElementById('stock-report-content').innerHTML = '<div class="spinner"></div>';
+    try {
+      const res = await apiGet('/admin/reports/stock_summary.php');
+      if (!res.status) { document.getElementById('stock-report-content').innerHTML='<div class="empty">Could not load stock summary.</div>'; return; }
+      const d = res.data;
+      const farmRows = (d.by_farm||[]).map(f=>`<tr>
+        <td>${escH(f.farm_name)}</td><td>${escH(f.location||'')}</td>
+        <td>${f.total_flocks}</td><td>${f.active_flocks}</td>
+        <td><strong>${f.active_birds}</strong></td><td>${f.total_birds}</td></tr>`).join('');
+      const typeRows = (d.by_bird_type||[]).map(t=>`<tr>
+        <td>${cap(t.bird_type)}</td><td>${t.total_flocks}</td>
+        <td><strong>${t.current_birds}</strong></td><td>${t.initial_birds}</td></tr>`).join('');
+      document.getElementById('stock-report-content').innerHTML = `
+        <div class="stats-grid" style="margin-bottom:1.25rem">
+          <div class="stat-card"><span class="sc-label">Total Active Birds</span><span class="sc-value">${d.totals?.active_birds||0}</span></div>
+          <div class="stat-card"><span class="sc-label">Total Initial (active flocks)</span><span class="sc-value">${d.totals?.initial_birds||0}</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="table-wrap">${tbl(['Farm','Location','Total Flocks','Active Flocks','Active Birds','Total Birds'],farmRows||'')}</div>
+          <div class="table-wrap">${tbl(['Bird Type','Flocks','Current Birds','Initial Birds'],typeRows||'')}</div>
+        </div>`;
+    } catch { document.getElementById('stock-report-content').innerHTML='<div class="empty">Could not load stock summary.</div>'; }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FLOCK PERFORMANCE REPORT
+  // ══════════════════════════════════════════════════════════════════
+  function initFlockPerf() {
+    const sel = document.getElementById('perf-flock');
+    if (sel && sel.options.length === 1) {
+      (_cache.flocks||[]).forEach(f => {
+        const o = document.createElement('option');
+        o.value = f.id; o.textContent = escH(f.batch_number) + ' (' + cap(f.bird_type) + ')';
+        sel.appendChild(o);
+      });
+    }
+  }
+  async function loadFlockPerf() {
+    document.getElementById('flock-perf-content').innerHTML = '<div class="spinner"></div>';
+    const flock = document.getElementById('perf-flock').value;
+    const qs = flock ? '?flock_id='+flock : '';
+    try {
+      const res = await apiGet('/admin/reports/flock_performance.php'+qs);
+      if (!res.status) { document.getElementById('flock-perf-content').innerHTML='<div class="empty">Could not load performance data.</div>'; return; }
+      const list = res.data || [];
+      document.getElementById('flock-perf-content').innerHTML = tbl(
+        ['Batch','Farm','Type','Status','Age (wks)','Initial','Current','Deaths','Mort %','Feed (kg)','FCR','Eggs','Birds Sold','Revenue'],
+        list.map(r=>`<tr>
+          <td>${escH(r.batch_number)}</td><td>${escH(r.farm_name||'')}</td>
+          <td>${cap(r.bird_type)}</td><td>${badge(r.status)}</td>
+          <td>${r.age_weeks}</td><td>${r.initial_count}</td><td>${r.current_count}</td>
+          <td style="color:var(--red)">${r.total_mortality}</td>
+          <td>${r.mortality_rate}%</td><td>${r.total_feed_kg}</td>
+          <td>${r.fcr !== null ? r.fcr : '—'}</td><td>${r.total_eggs}</td>
+          <td>${r.birds_sold}</td><td>${fmt(r.total_revenue)}</td></tr>`).join('')
+      );
+    } catch { document.getElementById('flock-perf-content').innerHTML='<div class="empty">Could not load performance data.</div>'; }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // MY PROFILE
+  // ══════════════════════════════════════════════════════════════════
+  async function loadMyProfile() {
+    try {
+      const res = await apiGet('/admin/auth/view_profile.php');
+      if (res.status && res.data) {
+        const d = res.data;
+        document.getElementById('pv-name').textContent    = d.name    || '—';
+        document.getElementById('pv-email').textContent   = d.email   || '—';
+        document.getElementById('pv-adminid').textContent = d.admin_id|| '—';
+        document.getElementById('pe-name').value  = d.name  || '';
+        document.getElementById('pe-email').value = d.email || '';
+      }
+    } catch {}
+  }
+  function showProfileEdit() {
+    document.getElementById('profile-view').style.display  = 'none';
+    document.getElementById('profile-edit').style.display  = 'block';
+  }
+  function hideProfileEdit() {
+    document.getElementById('profile-edit').style.display  = 'none';
+    document.getElementById('profile-view').style.display  = 'block';
+    document.getElementById('pe-err').style.display = 'none';
+  }
+  async function saveProfileUpdate() {
+    const errEl = document.getElementById('pe-err');
+    errEl.style.display = 'none';
+    const fd = new FormData();
+    fd.append('name',  fv('pe-name'));
+    fd.append('email', fv('pe-email'));
+    try {
+      const res = await apiPost('/admin/auth/update_profile.php', fd);
+      if (res.status) {
+        adminAuth.name = res.data.name; adminAuth.email = res.data.email;
+        localStorage.setItem('pf_admin', JSON.stringify(adminAuth));
+        document.getElementById('sb-admin-name').textContent  = res.data.name;
+        document.getElementById('top-admin-name').textContent = 'Hi, ' + res.data.name;
+        hideProfileEdit();
+        await loadMyProfile();
+        toast('Profile updated.','ok');
+      } else { errEl.textContent = res.text; errEl.style.display = 'block'; }
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+  }
+  async function saveChangePassword() {
+    const errEl = document.getElementById('cp-err');
+    errEl.style.display = 'none';
+    const cur  = fv('cp-current');
+    const nw   = fv('cp-new');
+    const conf = fv('cp-confirm');
+    if (!cur)       { errEl.textContent = 'Enter current password.'; errEl.style.display='block'; return; }
+    if (nw.length < 6) { errEl.textContent = 'New password must be at least 6 characters.'; errEl.style.display='block'; return; }
+    if (nw !== conf){ errEl.textContent = 'Passwords do not match.'; errEl.style.display='block'; return; }
+    const fd = new FormData();
+    fd.append('current_password', cur); fd.append('new_password', nw);
+    try {
+      const res = await apiPost('/admin/auth/change_password.php', fd);
+      if (res.status) {
+        document.getElementById('cp-current').value = '';
+        document.getElementById('cp-new').value     = '';
+        document.getElementById('cp-confirm').value = '';
+        toast('Password changed successfully.','ok');
+      } else { errEl.textContent = res.text; errEl.style.display = 'block'; }
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
   }
 
   // ── INIT — runs after all functions and const declarations are ready ──────

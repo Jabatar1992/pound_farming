@@ -39,21 +39,25 @@ if ($id <= 0) {
     respondBadRequest("status must be one of: " . implode(', ', $validStatuses) . ".");
 } else {
 
-    $exists = $connect->prepare("SELECT id FROM flock WHERE id = ? LIMIT 1");
+    $exists = $connect->prepare("SELECT id, initial_count, current_count FROM flock WHERE id = ? LIMIT 1");
     $exists->bind_param("i", $id);
     $exists->execute();
-    $found = $exists->get_result()->num_rows > 0;
-    $exists->close();
-
-    if (!$found) {
+    $existsResult = $exists->get_result();
+    if ($existsResult->num_rows === 0) {
+        $exists->close();
         respondNotFound([]);
     }
+    $existing = $existsResult->fetch_assoc();
+    $exists->close();
+
+    $countDiff    = $initial_count - $existing['initial_count'];
+    $new_current  = max(0, $existing['current_count'] + $countDiff);
 
     $connect->begin_transaction();
     try {
 
-        $stmt = $connect->prepare("UPDATE flock SET farm_id = ?, batch_number = ?, bird_type = ?, initial_count = ?, age_weeks = ?, status = ?, notes = ? WHERE id = ?");
-        $stmt->bind_param("issiissi", $farm_id, $batch_number, $bird_type, $initial_count, $age_weeks, $status, $notes, $id);
+        $stmt = $connect->prepare("UPDATE flock SET farm_id = ?, batch_number = ?, bird_type = ?, initial_count = ?, current_count = ?, age_weeks = ?, status = ?, notes = ? WHERE id = ?");
+        $stmt->bind_param("issiiissi", $farm_id, $batch_number, $bird_type, $initial_count, $new_current, $age_weeks, $status, $notes, $id);
         $stmt->execute();
 
         if ($stmt->affected_rows >= 0) {

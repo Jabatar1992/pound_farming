@@ -301,11 +301,36 @@
     <div id="log-mort" style="display:none"></div>
   </div>
 
+  <!-- PROFILE -->
+  <div id="sec-profile" class="section">
+    <p class="sec-title">My Profile</p>
+
+    <div style="background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1rem">
+      <h4 style="color:var(--green);margin-bottom:.9rem;font-size:.95rem">Account Info</h4>
+      <div id="wp-view">
+        <p style="font-size:.9rem;margin-bottom:.4rem"><strong>Name:</strong> <span id="wp-name">—</span></p>
+        <p style="font-size:.9rem;margin-bottom:.4rem"><strong>Phone:</strong> <span id="wp-phone">—</span></p>
+        <p style="font-size:.9rem;margin-bottom:.4rem"><strong>Email:</strong> <span id="wp-email">—</span></p>
+        <p style="font-size:.9rem;margin-bottom:.9rem"><strong>Role:</strong> <span id="wp-role">—</span></p>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)">
+      <h4 style="color:var(--green);margin-bottom:.9rem;font-size:.95rem">Change Password</h4>
+      <div class="form-group"><label>Current Password</label><input type="password" id="wcp-current" /></div>
+      <div class="form-group"><label>New Password</label><input type="password" id="wcp-new" /></div>
+      <div class="form-group"><label>Confirm New Password</label><input type="password" id="wcp-confirm" /></div>
+      <p id="wcp-err" style="font-size:.82rem;color:var(--red);margin-bottom:.5rem;display:none"></p>
+      <button class="sheet-btn" onclick="saveWorkerPassword()">Update Password</button>
+    </div>
+  </div>
+
   <!-- Bottom Nav -->
   <nav id="bottom-nav">
-    <button class="bnav-item active" onclick="goSec('home')"   data-sec="home">  <span class="bico">🏠</span>Home</button>
-    <button class="bnav-item"        onclick="goSec('flocks')" data-sec="flocks"><span class="bico">🐔</span>Flocks</button>
-    <button class="bnav-item"        onclick="goSec('logs')"   data-sec="logs">  <span class="bico">📋</span>My Logs</button>
+    <button class="bnav-item active" onclick="goSec('home')"    data-sec="home">   <span class="bico">🏠</span>Home</button>
+    <button class="bnav-item"        onclick="goSec('flocks')"  data-sec="flocks"> <span class="bico">🐔</span>Flocks</button>
+    <button class="bnav-item"        onclick="goSec('logs')"    data-sec="logs">   <span class="bico">📋</span>My Logs</button>
+    <button class="bnav-item"        onclick="goSec('profile')" data-sec="profile"><span class="bico">👤</span>Profile</button>
   </nav>
 </div>
 
@@ -422,8 +447,9 @@
     document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
     document.getElementById('sec-' + name).classList.add('active');
     document.querySelector(`.bnav-item[data-sec="${name}"]`)?.classList.add('active');
-    if (name === 'home')   loadHome();
-    if (name === 'flocks') loadFlocks();
+    if (name === 'home')    loadHome();
+    if (name === 'flocks')  loadFlocks();
+    if (name === 'profile') loadWorkerProfile();
     if (name === 'logs')   loadLogs();
   }
 
@@ -751,6 +777,42 @@
         loadHome();
       } else sheetErr(res.text || 'Failed to save.');
     });
+  }
+
+  // ── PROFILE ──────────────────────────────────────────────────────
+  async function loadWorkerProfile() {
+    try {
+      const res = await get('/user/auth/view_profile.php');
+      if (res.status && res.data) {
+        const d = res.data;
+        document.getElementById('wp-name').textContent  = d.name  || '—';
+        document.getElementById('wp-phone').textContent = d.phone || '—';
+        document.getElementById('wp-email').textContent = d.email || '—';
+        document.getElementById('wp-role').textContent  = cap(d.role || '—');
+      }
+    } catch {}
+  }
+  function fv(id) { return document.getElementById(id)?.value ?? ''; }
+  async function saveWorkerPassword() {
+    const errEl = document.getElementById('wcp-err');
+    errEl.style.display = 'none';
+    const cur  = fv('wcp-current');
+    const nw   = fv('wcp-new');
+    const conf = fv('wcp-confirm');
+    if (!cur)          { errEl.textContent='Enter current password.'; errEl.style.display='block'; return; }
+    if (nw.length < 6) { errEl.textContent='New password must be at least 6 characters.'; errEl.style.display='block'; return; }
+    if (nw !== conf)   { errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
+    const fd = new FormData();
+    fd.append('current_password', cur); fd.append('new_password', nw);
+    try {
+      const res = await post('/user/auth/change_password.php', fd);
+      if (res.status) {
+        document.getElementById('wcp-current').value = '';
+        document.getElementById('wcp-new').value     = '';
+        document.getElementById('wcp-confirm').value = '';
+        toast('Password changed successfully.','ok');
+      } else { errEl.textContent = res.text || 'Failed.'; errEl.style.display='block'; }
+    } catch { errEl.textContent='Network error.'; errEl.style.display='block'; }
   }
 
   // ── MORTALITY ────────────────────────────────────────────────────
